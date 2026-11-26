@@ -1,63 +1,90 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sunny: turn the sun up</title>
-  <meta name="description" content="Your MacBook Pro's XDR screen goes brighter than macOS lets it. Sunny turns the sun up: a tiny free menu-bar app, from 100% to about 300%.">
-  <meta name="theme-color" content="#2d2a6e">
-  <meta property="og:title" content="Sunny: turn the sun up">
-  <meta property="og:description" content="Your MacBook Pro's XDR screen goes brighter than macOS lets it. Sunny turns the sun up.">
-  <meta property="og:type" content="website">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <main class="sky is-dusk" id="sky">
-    <p class="wordmark">Sunny</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sunny: turn the sun up</title>
+    <meta name="description" content="Your MacBook Pro's XDR screen goes brighter than macOS lets it. Sunny turns the sun up: a tiny free menu-bar app, from 100% to about 300%." />
+    <meta name="theme-color" content="#2d2a6e" />
+    <meta property="og:title" content="Sunny: turn the sun up" />
+    <meta property="og:description" content="Your MacBook Pro's XDR screen goes brighter than macOS lets it. Sunny turns the sun up." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body class="bg-paper font-sans text-base text-ink antialiased">
+    <main
+      id="sky"
+      data-dusk
+      class="group relative grid min-h-svh cursor-ns-resize grid-cols-1 grid-rows-sky overflow-hidden bg-linear-to-b from-sky-top via-sky-mid to-sky-low px-gutter text-ink select-none data-dusk:text-cream md:min-h-hero md:grid-cols-2 md:grid-rows-sky-wide md:gap-x-fluid-l"
+    >
+      <header data-intro class="relative z-3 col-start-1 row-start-1 min-w-0 cursor-auto pt-fluid-m select-text md:self-center md:py-fluid-s">
+        <p class="text-display font-semibold font-stretch-condensed text-shadow-offset">Sunny</p>
+        <h1 class="mt-fluid-s max-w-headline text-lg font-medium text-balance wrap-break-word">Your MacBook Pro's XDR screen goes brighter than macOS lets it. Sunny turns the sun up.</h1>
+        <a
+          class="mt-fluid-s inline-block rounded-full bg-pink px-7 py-3.5 text-base leading-tight font-bold text-ink hover:-translate-y-0.5 motion-safe:transition-transform"
+          href="https://github.com/abernier/sunny/releases/latest/download/Sunny-arm64.dmg"
+          >Download for Mac</a
+        >
+        <div data-brew class="mt-6 text-sm">
+          <p class="mb-2 font-semibold opacity-85">or with Homebrew</p>
+          <div class="flex items-center rounded-md bg-current/10">
+            <pre class="scrollbar-none min-w-0 flex-1 overflow-x-auto py-3 pl-4 font-mono leading-relaxed whitespace-pre" tabindex="0"><code><span class="opacity-55 select-none" aria-hidden="true">$ </span>brew install --cask abernier/tap/sunny</code></pre>
+            <button
+              class="group/copy m-1.5 grid size-8 shrink-0 cursor-pointer place-items-center rounded-sm opacity-75 hover:bg-current/15 hover:opacity-100"
+              type="button"
+              data-copy="brew install --cask abernier/tap/sunny"
+              aria-label="Copy the Homebrew command"
+            >
+              <svg class="size-4 group-data-copied/copy:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="8" y="8" width="12" height="12" rx="2" />
+                <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+              </svg>
+              <svg class="hidden size-4 group-data-copied/copy:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12.5l4.5 4.5L19 7.5" />
+              </svg>
+            </button>
+          </div>
+          <p class="sr-only" id="copy-status" role="status"></p>
+        </div>
+        <p class="mt-6 text-sm opacity-85">macOS, Apple silicon, XDR display &middot; <a class="underline" href="https://github.com/abernier/sunny">GitHub</a></p>
+      </header>
 
-    <header class="intro" id="intro">
-      <h1>Your MacBook Pro's XDR screen goes brighter than macOS lets it. Sunny turns the sun up.</h1>
-      <a class="download" href="https://github.com/abernier/sunny/releases/latest/download/Sunny-arm64.dmg">Download for Mac</a>
-      <div class="brew">
-        <p class="brew-label">or with Homebrew</p>
-        <ul class="commands">
-          <li class="command">
-            <code>brew tap abernier/sunny https://<wbr>github.com/<wbr>abernier/<wbr>sunny</code>
-            <button class="copy" type="button" data-copy="brew tap abernier/sunny https://github.com/abernier/sunny" aria-label="Copy: brew tap abernier/sunny https://github.com/abernier/sunny">Copy</button>
-          </li>
-          <li class="command">
-            <code>brew install --cask abernier/<wbr>sunny/<wbr>sunny</code>
-            <button class="copy" type="button" data-copy="brew install --cask abernier/sunny/sunny" aria-label="Copy: brew install --cask abernier/sunny/sunny">Copy</button>
-          </li>
-        </ul>
-        <p class="visually-hidden" id="copy-status" role="status"></p>
+      <div id="track" class="col-start-1 row-start-2 md:col-start-2 md:row-start-1 md:mt-fluid-l" aria-hidden="true"></div>
+
+      <div
+        id="sun"
+        role="slider"
+        tabindex="0"
+        aria-label="Brightness"
+        aria-valuemin="100"
+        aria-valuemax="300"
+        aria-valuenow="100"
+        aria-valuetext="100%"
+        class="absolute top-0 left-(--sun-x) z-1 size-sun -translate-x-1/2 translate-y-(--sun-y) cursor-grab touch-none rounded-full bg-sun text-ink shadow-sun active:cursor-grabbing focus-visible:outline-2 focus-visible:outline-offset-8 group-data-dusk:focus-visible:outline-cream"
+      >
+        <span id="percent" class="absolute inset-x-0 top-1/5 text-center text-percent font-semibold font-stretch-condensed tabular-nums text-shadow-offset" aria-hidden="true">100%</span>
+        <p
+          id="hint"
+          class="pointer-events-none absolute bottom-full left-1/2 mb-6 -translate-x-1/2 text-center text-sm font-semibold whitespace-nowrap text-ink group-data-dusk:text-cream data-gone:opacity-0 motion-safe:transition-opacity motion-safe:duration-400"
+          aria-hidden="true"
+        >
+          <span class="mb-1 block text-lg leading-none">&uarr;</span>drag the sun
+        </p>
       </div>
-      <p class="meta">macOS, Apple silicon, XDR display &middot; <a href="https://github.com/abernier/sunny">GitHub</a></p>
-    </header>
 
-    <div class="track" id="track" aria-hidden="true"></div>
+      <div id="sea" class="relative z-2 col-span-full row-start-3 -mx-gutter overflow-hidden bg-linear-to-b from-sea-surface to-sea to-70% md:row-start-2" aria-hidden="true">
+        <div class="reflection absolute top-0 left-(--sun-x) h-5/6 w-sun -translate-x-1/2 opacity-(--reflect)"></div>
+      </div>
+    </main>
 
-    <div class="sun" id="sun" role="slider" tabindex="0"
-         aria-label="Brightness" aria-valuemin="100" aria-valuemax="300"
-         aria-valuenow="100" aria-valuetext="100%">
-      <span class="percent" id="percent" aria-hidden="true">100%</span>
-    </div>
-    <p class="hint" id="hint" aria-hidden="true">drag the sun</p>
-
-    <div class="sea" id="sea" aria-hidden="true"><div class="reflection"></div></div>
-  </main>
-
-  <section class="details" aria-label="Details">
-    <p>Also in the terminal: <code>luminosity 150</code>, <code>luminosity +</code>, <code>luminosity -</code>, <code>luminosity off</code>. Each <code>+</code> is one x1.1 step, from 100 to 300%.</p>
-    <p>Not notarized yet: if you used the download, the first time right-click Sunny and choose Open (or System Settings &gt; Privacy &amp; Security &gt; Open Anyway). The Homebrew install takes care of this for you.</p>
-    <p>A brighter screen runs warmer and drains the battery faster, and the brightest colours can clip. Needs a MacBook Pro 14" or 16" with Liquid Retina XDR display, M1 Pro or later.</p>
-    <footer>MIT license &middot; <a href="https://github.com/abernier/sunny">github.com/abernier/sunny</a></footer>
-  </section>
-
-  <script src="main.js" defer></script>
-</body>
+    <section class="px-gutter pt-fluid-m pb-fluid-xl" aria-label="Details">
+      <div class="max-w-2xl">
+        <p class="mb-4">Also in the terminal: <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity 150</code>, <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity +</code>, <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity -</code>, <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity off</code>. Each <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">+</code> is one x1.1 step, from 100 to 300%.</p>
+        <p class="mb-4">Not notarized yet: if you used the download, the first time right-click Sunny and choose Open (or System Settings &gt; Privacy &amp; Security &gt; Open Anyway). The Homebrew install takes care of this for you.</p>
+        <p class="mb-4">A brighter screen runs warmer and drains the battery faster, and the brightest colours can clip. Needs a MacBook Pro 14" or 16" with Liquid Retina XDR display, M1 Pro or later.</p>
+        <footer class="mt-8 border-t-2 border-blush pt-4 text-sm">MIT license &middot; <a class="underline" href="https://github.com/abernier/sunny">github.com/abernier/sunny</a></footer>
+      </div>
+    </section>
+  </body>
 </html>

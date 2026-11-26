@@ -1,0 +1,139 @@
+@import "tailwindcss";
+@import "@fontsource-variable/bricolage-grotesque/standard.css";
+
+/*
+  Fluid scales (Utopia-style), interpolated between a 360px and a 1920px viewport.
+
+  Type: step n is 16px * 1.25^n at 360px and 20px * 1.6^n at 1920px, so the
+  ratio itself grows with the viewport and the display steps pull away from
+  the body text on large screens.
+
+    slope     = (max - min) / (1920 - 360)
+    intercept = min - slope * 360
+    size      = clamp(min, intercept + slope * 100vw, max)   (px values / 16 -> rem)
+
+  Below the smallest step the max is smaller than the min (1.6 shrinks faster
+  than 1.25), so step -1 has its bounds swapped and a negative slope.
+
+  Space: the same formula with hand-picked min/max pairs, for page-level gaps only.
+*/
+@theme {
+  --font-sans: "Bricolage Grotesque Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Only the steps below exist: no Tailwind default type sizes */
+  --text-*: initial;
+  /* step -1: 12.8px -> 12.5px */
+  --text-sm: clamp(0.7813rem, 0.8043rem - 0.0192vw, 0.8rem);
+  --text-sm--line-height: 1.4;
+  /* step 0: 16px -> 20px */
+  --text-base: clamp(1rem, 0.9423rem + 0.2564vw, 1.25rem);
+  --text-base--line-height: 1.55;
+  /* step 1: 20px -> 32px */
+  --text-lg: clamp(1.25rem, 1.0769rem + 0.7692vw, 2rem);
+  --text-lg--line-height: 1.15;
+  --text-lg--letter-spacing: -0.015em;
+  /* step 2: 25px -> 51.2px */
+  --text-xl: clamp(1.5625rem, 1.1846rem + 1.6795vw, 3.2rem);
+  --text-xl--line-height: 1.05;
+  --text-xl--letter-spacing: -0.02em;
+  /* step 3: 31.25px -> 81.92px */
+  --text-2xl: clamp(1.9531rem, 1.2223rem + 3.2481vw, 5.12rem);
+  --text-2xl--line-height: 1;
+  --text-2xl--letter-spacing: -0.025em;
+  /* step 4: 39.06px -> 131.07px */
+  --text-3xl: clamp(2.4414rem, 1.1143rem + 5.898vw, 8.192rem);
+  --text-3xl--line-height: 0.95;
+  --text-3xl--letter-spacing: -0.03em;
+  /* step 5: 48.83px -> 209.72px */
+  --text-4xl: clamp(3.0518rem, 0.7313rem + 10.3133vw, 13.1072rem);
+  --text-4xl--line-height: 0.9;
+  --text-4xl--letter-spacing: -0.035em;
+  /*
+    The poster line. On one column it is fit to width: "Sunny" measures about
+    1.66em at its display optical size, so 0.54 x the content width makes it
+    span 90% of the column. On two columns (below) it is step 6: 61.04px -> 335.54px.
+  */
+  --text-display: calc((100vw - 2 * var(--spacing-gutter)) * 0.54);
+  --text-display--line-height: 0.8;
+  --text-display--letter-spacing: -0.04em;
+  /* The percent inside the sun follows the sun, not the viewport */
+  --text-percent: calc(var(--spacing-sun) * 0.34);
+  --text-percent--line-height: 0.8;
+  --text-percent--letter-spacing: -0.04em;
+
+  /* One page gutter, used by every block so all left edges align: 20px -> 112px */
+  --spacing-gutter: clamp(1.25rem, -0.0769rem + 5.8974vw, 7rem);
+  /* Page-level gaps: 16->24, 24->48, 32->80, 48->128 px */
+  --spacing-fluid-s: clamp(1rem, 0.8846rem + 0.5128vw, 1.5rem);
+  --spacing-fluid-m: clamp(1.5rem, 1.1538rem + 1.5385vw, 3rem);
+  --spacing-fluid-l: clamp(2rem, 1.3077rem + 3.0769vw, 5rem);
+  --spacing-fluid-xl: clamp(3rem, 1.8462rem + 5.1282vw, 8rem);
+
+  /* The sky: one screen, minus a peek of the details on wide screens */
+  --spacing-hero: calc(100svh - var(--spacing) * 16);
+  /* Sun, sea and the sun's travel on one column (redefined for two columns below) */
+  --spacing-sun: clamp(8.75rem, min(46vw, 20svh), 15rem);
+  --spacing-sea: clamp(6rem, 15svh, 10rem);
+  --spacing-track: clamp(8.5rem, 18svh, 21.25rem);
+
+  /* One column: text, the sun's travel, the sea. Two columns: sky, sea. */
+  --grid-template-rows-sky: auto minmax(var(--spacing-track), 1fr) var(--spacing-sea);
+  --grid-template-rows-sky-wide: 1fr var(--spacing-sea);
+
+  --container-headline: 18em;
+
+  --color-ink: #2a1838;
+  --color-cream: #fff7f0;
+  --color-paper: #fff4ea;
+  --color-peach: #ffe0cc;
+  --color-blush: #ffd2bd;
+  --color-pink: #ff6f9c;
+  /* Driven by main.ts from the sun's height (dusk values here) */
+  --color-sky-top: #2d2a6e;
+  --color-sky-mid: #8a5fb3;
+  --color-sky-low: #ff9fb6;
+  --color-sea: #3b3f7a;
+  --color-sun: #ff7a59;
+  --color-sea-surface: color-mix(in srgb, var(--color-sea) 65%, var(--color-sky-low));
+  --color-sun-glow: color-mix(in srgb, var(--color-sun) 35%, transparent);
+
+  --shadow-sun:
+    0 0 0 calc(var(--spacing-sun) * 0.08) var(--color-sun-glow),
+    0 0 calc(var(--spacing-sun) * 0.6) var(--color-sun-glow);
+  /* The one accent of the display lines: a thin, hard offset in pink */
+  --text-shadow-offset: 0.018em 0.018em 0 var(--color-pink);
+}
+
+@layer base {
+  /* Two columns: the sun, the sea and the hero follow the viewport height too */
+  :root {
+    @variant md {
+      --spacing-sun: clamp(10rem, min(26vw, 40svh), 37.5rem);
+      --spacing-sea: clamp(6rem, 18svh, 25rem);
+      --text-display: clamp(3.8147rem, -0.1446rem + 17.5967vw, 20.9715rem);
+    }
+  }
+
+  :focus-visible {
+    @apply outline-3 outline-offset-4 outline-current;
+  }
+}
+
+/* The sun's reflection: a straight column of stripes as wide as the sun, fading downwards */
+@utility reflection {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-sun) 0 --spacing(1.25),
+    transparent --spacing(1.25) --spacing(3.25)
+  );
+  mask-image: linear-gradient(to bottom, black 10%, transparent);
+}
+
+/* Hidden scrollbar on a block that still scrolls (the Homebrew command on narrow screens) */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
