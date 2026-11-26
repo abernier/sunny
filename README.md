@@ -5,19 +5,16 @@ cap, up to 3x, using the headroom macOS keeps for HDR content.
 
 ## The menu bar app
 
-With [Homebrew](https://brew.sh), from this repository as a tap (Apple silicon, macOS 13 or later):
+With [Homebrew](https://brew.sh) (Apple silicon, macOS 13 or later):
 
 ```bash
-brew tap abernier/sunny https://github.com/abernier/sunny
+brew install --cask abernier/tap/sunny
 ```
 
-```bash
-brew install --cask abernier/sunny/sunny
-```
-
-Use the full name `abernier/sunny/sunny`: Homebrew refuses to load a cask from an untrusted tap by its short
-name. The cask also clears the quarantine flag, so Gatekeeper lets the app open; `brew upgrade` follows new
-releases, and `brew uninstall --cask sunny` quits the app and stops the boost.
+This taps [abernier/homebrew-tap](https://github.com/abernier/homebrew-tap) and trusts the cask in one go
+(Homebrew refuses a cask from an untrusted tap by its short name). The cask also clears the quarantine flag,
+so Gatekeeper lets the app open; `brew upgrade` follows new releases, and `brew uninstall --cask sunny` quits
+the app and stops the boost.
 
 Or download `Sunny-arm64.dmg` from the [latest release](https://github.com/abernier/sunny/releases/latest),
 open it and drag Sunny to Applications.
@@ -80,12 +77,13 @@ boost/    luminosity-boost, the Swift program
 shell/    luminosity, the bash function
 tray/     the menu bar app (Electron, React): see tray/README.md
 site/     the landing page
-Casks/    sunny.rb, the Homebrew cask (this repository is its tap)
+tap_migrations.json  sends the old abernier/sunny tap to abernier/tap
 install.sh
 ```
 
-Releases are built by `.github/workflows/release.yml` when a `v*` tag is pushed; it also bumps
-`Casks/sunny.rb` on main. Never rebuild a published release in place: the cask pins its sha256.
+Releases are built by `.github/workflows/release.yml` when a `v*` tag is pushed; it also bumps the cask in
+[abernier/homebrew-tap](https://github.com/abernier/homebrew-tap) through a write deploy key of that repository
+(secret `HOMEBREW_TAP_DEPLOY_KEY`). Never rebuild a published release in place: the cask pins its sha256.
 
 ## License
 

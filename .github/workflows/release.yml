@@ -1,5 +1,5 @@
 # Builds Sunny.app for Apple silicon and publishes Sunny-arm64.dmg and Sunny-arm64.zip.
-# A tag v* makes the GitHub Release of that tag and bumps Casks/sunny.rb on main; the site links to
+# A tag v* makes the GitHub Release of that tag and bumps the cask in abernier/homebrew-tap; the site links to
 # https://github.com/abernier/sunny/releases/latest/download/Sunny-arm64.dmg.
 # Run by hand, it builds and keeps the files as a workflow artifact only.
 # The app is signed ad hoc and not notarised: there are no Apple credentials here.
@@ -78,18 +78,25 @@ jobs:
           fi
           gh release create "$TAG" release/Sunny-arm64.dmg release/Sunny-arm64.zip --title "Sunny $TAG" --generate-notes
 
-      - name: Bump the Homebrew cask on main
+      # The cask lives in abernier/homebrew-tap (brew install --cask abernier/tap/sunny).
+      # HOMEBREW_TAP_DEPLOY_KEY is a write deploy key of that repository only.
+      - name: Bump the Homebrew cask in abernier/homebrew-tap
         if: startsWith(github.ref, 'refs/tags/v')
         working-directory: .
         env:
           TAG: ${{ github.ref_name }}
+          DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
         run: |
           sha=$(shasum -a 256 tray/release/Sunny-arm64.dmg | cut -d' ' -f1)
-          git fetch --depth=1 origin main
-          git checkout -B main origin/main
+          key="$RUNNER_TEMP/tap_key"
+          printf '%s\n' "$DEPLOY_KEY" > "$key"
+          chmod 600 "$key"
+          export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git clone --depth=1 git@github.com:abernier/homebrew-tap.git "$RUNNER_TEMP/tap"
+          cd "$RUNNER_TEMP/tap"
           sed -i '' -E "s/^  version \".*\"/  version \"${TAG#v}\"/; s/^  sha256 \".*\"/  sha256 \"$sha\"/" Casks/sunny.rb
           git diff --quiet && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "Bump the Homebrew cask to $TAG"
+          git commit -am "sunny $TAG"
           git push origin main
