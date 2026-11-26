@@ -10,7 +10,8 @@
   const sun = document.getElementById("sun");
   const percent = document.getElementById("percent");
   const hint = document.getElementById("hint");
-  const intro = document.getElementById("intro");
+  const trackEl = document.getElementById("track");
+  const seaEl = document.getElementById("sea");
 
   // Sky palette at dusk (100%), golden hour (~175%) and noon (300%).
   const STOPS = [
@@ -53,21 +54,20 @@
     return MIN * Math.pow(MAX / MIN, t);
   }
 
-  // Vertical travel of the sun's centre, in px from the top of the sky.
+  // The sun travels in the track (the right column, or under the text on
+  // small screens): centred horizontally, from the horizon up to the track's top.
   function track() {
     const skyRect = sky.getBoundingClientRect();
+    const trackRect = trackEl.getBoundingClientRect();
     const size = sun.offsetWidth;
-    const horizon = sea().offsetTop;
-    const sunLeft = sun.getBoundingClientRect().left;
-    const introRect = intro.getBoundingClientRect();
-    const overlaps = sunLeft < introRect.right && sunLeft + size > introRect.left;
-    const ceiling = overlaps ? introRect.bottom - skyRect.top + 24 : skyRect.height * 0.12;
-    const highest = Math.min(ceiling + size / 2, horizon - size * 0.35);
-    return { lowest: horizon, highest: highest, size: size };
-  }
-
-  function sea() {
-    return sky.querySelector(".sea");
+    const horizon = seaEl.offsetTop;
+    const top = trackRect.top - skyRect.top;
+    return {
+      x: trackRect.left - skyRect.left + trackRect.width / 2,
+      lowest: horizon,
+      highest: Math.min(top + size / 2, horizon - size * 0.35),
+      size: size,
+    };
   }
 
   function render() {
@@ -83,8 +83,10 @@
 
     const k = track();
     const centre = k.lowest + (k.highest - k.lowest) * t;
+    sky.style.setProperty("--sun-x", k.x + "px");
+    sky.style.setProperty("--reflect", String(0.75 - 0.4 * t));
     sun.style.setProperty("--sun-y", centre - k.size / 2 + "px");
-    hint.style.setProperty("--hint-y", centre - k.size / 2 - 64 + "px");
+    hint.style.setProperty("--hint-y", centre - k.size / 2 + "px");
 
     const rounded = Math.round(level);
     percent.textContent = rounded + "%";
@@ -110,7 +112,7 @@
 
   let dragging = false;
   sky.addEventListener("pointerdown", function (event) {
-    if (event.target.closest("a, .intro")) return;
+    if (event.target.closest("a, button, .intro")) return;
     // On touch, only the sun itself is draggable, so the page still scrolls.
     if (event.pointerType !== "mouse" && !event.target.closest("#sun")) return;
     dragging = true;
@@ -139,6 +141,25 @@
     if (!(event.key in keys)) return;
     event.preventDefault();
     setLevel(keys[event.key]);
+  });
+
+  // Homebrew commands: copy buttons with "Copied" feedback.
+  const status = document.getElementById("copy-status");
+  document.querySelectorAll("[data-copy]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      const text = button.getAttribute("data-copy");
+      const done = function (ok) {
+        button.textContent = ok ? "Copied" : "Copy failed";
+        status.textContent = ok ? "Copied to the clipboard" : "Could not copy, select the command instead";
+        clearTimeout(button._reset);
+        button._reset = setTimeout(function () { button.textContent = "Copy"; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      } else {
+        done(false);
+      }
+    });
   });
 
   window.addEventListener("resize", render);

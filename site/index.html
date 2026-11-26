@@ -17,12 +17,29 @@
 </head>
 <body>
   <main class="sky is-dusk" id="sky">
+    <p class="wordmark">Sunny</p>
+
     <header class="intro" id="intro">
-      <p class="wordmark">Sunny</p>
       <h1>Your MacBook Pro's XDR screen goes brighter than macOS lets it. Sunny turns the sun up.</h1>
       <a class="download" href="https://github.com/abernier/sunny/releases/latest/download/Sunny-arm64.dmg">Download for Mac</a>
+      <div class="brew">
+        <p class="brew-label">or with Homebrew</p>
+        <ul class="commands">
+          <li class="command">
+            <code>brew tap abernier/sunny https://<wbr>github.com/<wbr>abernier/<wbr>sunny</code>
+            <button class="copy" type="button" data-copy="brew tap abernier/sunny https://github.com/abernier/sunny" aria-label="Copy: brew tap abernier/sunny https://github.com/abernier/sunny">Copy</button>
+          </li>
+          <li class="command">
+            <code>brew install --cask abernier/<wbr>sunny/<wbr>sunny</code>
+            <button class="copy" type="button" data-copy="brew install --cask abernier/sunny/sunny" aria-label="Copy: brew install --cask abernier/sunny/sunny">Copy</button>
+          </li>
+        </ul>
+        <p class="visually-hidden" id="copy-status" role="status"></p>
+      </div>
       <p class="meta">macOS, Apple silicon, XDR display &middot; <a href="https://github.com/abernier/sunny">GitHub</a></p>
     </header>
+
+    <div class="track" id="track" aria-hidden="true"></div>
 
     <div class="sun" id="sun" role="slider" tabindex="0"
          aria-label="Brightness" aria-valuemin="100" aria-valuemax="300"
@@ -31,13 +48,12 @@
     </div>
     <p class="hint" id="hint" aria-hidden="true">drag the sun</p>
 
-    <div class="sea" aria-hidden="true"><div class="glint" id="glint"></div></div>
+    <div class="sea" id="sea" aria-hidden="true"><div class="reflection"></div></div>
   </main>
 
   <section class="details" aria-label="Details">
     <p>Also in the terminal: <code>luminosity 150</code>, <code>luminosity +</code>, <code>luminosity -</code>, <code>luminosity off</code>. Each <code>+</code> is one x1.1 step, from 100 to 300%.</p>
-    <p>With Homebrew: <code>brew tap abernier/sunny https://github.com/abernier/sunny</code> then <code>brew install --cask abernier/sunny/sunny</code>.</p>
-    <p>Not notarized yet: from the download, the first time, right-click Sunny and choose Open (or System Settings &gt; Privacy &amp; Security &gt; Open Anyway).</p>
+    <p>Not notarized yet: if you used the download, the first time right-click Sunny and choose Open (or System Settings &gt; Privacy &amp; Security &gt; Open Anyway). The Homebrew install takes care of this for you.</p>
     <p>A brighter screen runs warmer and drains the battery faster, and the brightest colours can clip. Needs a MacBook Pro 14" or 16" with Liquid Retina XDR display, M1 Pro or later.</p>
     <footer>MIT license &middot; <a href="https://github.com/abernier/sunny">github.com/abernier/sunny</a></footer>
   </section>
