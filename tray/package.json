@@ -15,6 +15,7 @@
     "check": "tsc --noEmit",
     "test": "node --test 'test/*.test.ts'",
     "icon": "node scripts/icon.mjs",
+    "app-icon": "node scripts/app-icon.mjs",
     "pack": "node scripts/pack.mjs",
     "dist": "node scripts/pack.mjs --dmg"
   },

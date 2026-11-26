@@ -12,6 +12,7 @@ import { build as packApp } from "electron-builder";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { isStale, renderAppIcon } from "./app-icon.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 const out = path.join(root, "release");
@@ -19,6 +20,15 @@ const run = (cmd, args) => execFileSync(cmd, args, { cwd: root, stdio: "inherit"
 
 // Building runs scripts/boost.mjs too: .stage/boost/luminosity-boost is there afterwards.
 run(process.execPath, [path.join(root, "scripts", "build.mjs")]);
+// The app icon is committed; it is rendered again only when assets/icon.svg is newer than it.
+if (isStale()) {
+	try {
+		renderAppIcon();
+	} catch (error) {
+		if (!fs.existsSync(path.join(root, "assets", "icon.icns"))) throw error;
+		console.warn(`kept the committed assets/icon.icns: ${error.message}`);
+	}
+}
 fs.rmSync(out, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 });
 
 const identity = process.env.CSC_NAME ?? (process.env.CSC_LINK ? undefined : "-");
@@ -44,6 +54,8 @@ await packApp({
 			target: (process.argv.includes("--dmg") ? ["dmg", "zip"] : ["dir"]).map((target) => ({ target, arch: ["arm64"] })),
 			// No version in the name: the site links to .../releases/latest/download/Sunny-arm64.dmg.
 			artifactName: "Sunny-${arch}.${ext}",
+			// Also the DMG's volume icon, which defaults to it.
+			icon: "assets/icon.icns",
 			darkModeSupport: true,
 			identity,
 			hardenedRuntime: !adhoc,
