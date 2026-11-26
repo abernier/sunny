@@ -2,7 +2,9 @@
 // from dusk to blinding noon, like Sunny does to your screen, from 100% to 300%.
 import "./style.css";
 import { DUSK_UNTIL, paletteAt } from "./palette.ts";
-import { MIN, clampLevel, levelForKey, levelToPosition, pointerToPosition, positionToLevel } from "./slider.ts";
+import { setupMenuBar } from "./menubar.ts";
+import { levelForKey, levelToPosition, pointerToPosition, positionToLevel } from "./slider.ts";
+import { brightness } from "./store.ts";
 
 function byId<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -17,9 +19,7 @@ const percent = byId("percent");
 const hint = byId("hint");
 const trackElement = byId("track");
 const sea = byId("sea");
-
-let level = MIN;
-let touched = false;
+const details = byId("details");
 
 /**
  * The sun travels in the track (the right column, or under the text on one
@@ -41,6 +41,7 @@ function measureTrack() {
 }
 
 function render() {
+  const level = brightness.get();
   const position = levelToPosition(level);
   const palette = paletteAt(position);
   root.style.setProperty("--color-sky-top", palette.skyTop);
@@ -49,6 +50,7 @@ function render() {
   root.style.setProperty("--color-sea", palette.sea);
   root.style.setProperty("--color-sun", palette.sun);
   sky.toggleAttribute("data-dusk", position < DUSK_UNTIL);
+  details.toggleAttribute("data-dusk", position < DUSK_UNTIL);
 
   const track = measureTrack();
   const centre = track.lowest + (track.highest - track.lowest) * position;
@@ -56,20 +58,19 @@ function render() {
   sky.style.setProperty("--sun-y", `${centre - track.size / 2}px`);
   sky.style.setProperty("--reflect", String(0.75 - 0.4 * position));
 
-  const rounded = Math.round(level);
-  percent.textContent = `${rounded}%`;
-  sun.setAttribute("aria-valuenow", String(rounded));
-  sun.setAttribute("aria-valuetext", `${rounded}%`);
+  percent.textContent = `${level}%`;
+  sun.setAttribute("aria-valuenow", String(level));
+  sun.setAttribute("aria-valuetext", `${level}%`);
 }
 
-function setLevel(value: number) {
-  level = clampLevel(value);
-  if (!touched) {
-    touched = true;
-    hint.toggleAttribute("data-gone", true);
-  }
-  render();
-}
+// The sun and the menu bar's popover both write the one store; every change repaints the sky.
+const setLevel = brightness.set;
+const stopHint = brightness.subscribe(() => {
+  hint.toggleAttribute("data-gone", true);
+  stopHint();
+});
+brightness.subscribe(render);
+setupMenuBar(brightness);
 
 function levelFromPointer(clientY: number) {
   const track = measureTrack();
@@ -80,7 +81,7 @@ function levelFromPointer(clientY: number) {
 let dragging = false;
 sky.addEventListener("pointerdown", (event) => {
   const target = event.target as Element;
-  if (target.closest("a, button, [data-intro]")) return;
+  if (target.closest("a, button, [data-intro], [data-menubar]")) return;
   // On touch, only the sun itself is draggable, so the page still scrolls.
   if (event.pointerType !== "mouse" && !target.closest("#sun")) return;
   dragging = true;
@@ -98,7 +99,7 @@ sky.addEventListener("pointerup", stop);
 sky.addEventListener("pointercancel", stop);
 
 sun.addEventListener("keydown", (event) => {
-  const next = levelForKey(event.key, level);
+  const next = levelForKey(event.key, brightness.get());
   if (next === null) return;
   event.preventDefault();
   setLevel(next);

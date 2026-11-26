@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MAX, MIN, levelForKey, levelToPosition, pointerToPosition, positionToLevel } from "./slider.ts";
+import { MAX, MIN, STEPS_MAX, levelForKey, levelToPosition, levelToSteps, pointerToPosition, positionToLevel, stepsToLevel } from "./slider.ts";
 
 test("positions and levels round-trip on a log scale", () => {
   assert.equal(levelToPosition(MIN), 0);
@@ -39,4 +39,12 @@ test("keys move by one x1.1 step, three per page, and jump to the ends", () => {
   assert.equal(levelForKey("Home", 200), MIN);
   assert.equal(levelForKey("End", 120), MAX);
   assert.equal(levelForKey("a", 120), null);
+});
+
+test("the popover slider counts x1.1 steps from 100%", () => {
+  assert.equal(levelToSteps(MIN), 0);
+  assert.ok(Math.abs(levelToSteps(121) - 2) < 1e-9);
+  assert.ok(Math.abs(stepsToLevel(STEPS_MAX) - MAX) < 1e-9);
+  assert.equal(stepsToLevel(99), MAX);
+  assert.equal(stepsToLevel(-1), MIN);
 });

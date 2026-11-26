@@ -89,6 +89,8 @@
   --color-peach: #ffe0cc;
   --color-blush: #ffd2bd;
   --color-pink: #ff6f9c;
+  /* The real app's accent: the popover's switch and slider fill */
+  --color-boost: #f59e0b;
   /* Driven by main.ts from the sun's height (dusk values here) */
   --color-sky-top: #2d2a6e;
   --color-sky-mid: #8a5fb3;
@@ -135,5 +137,52 @@
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/*
+  The popover's slider: a native range drawn like the real app's (thin track, white thumb).
+  --fill, set from menubar.ts, is the filled share of the track, in percent.
+*/
+@utility range-tray {
+  appearance: none;
+  background: transparent;
+  height: --spacing(6);
+  cursor: default;
+  --range-track: linear-gradient(
+    to right,
+    var(--color-boost) var(--fill, 0%),
+    color-mix(in srgb, var(--color-ink) 15%, transparent) var(--fill, 0%)
+  );
+  &::-webkit-slider-runnable-track {
+    height: --spacing(1);
+    border-radius: --spacing(1);
+    background: var(--range-track);
+  }
+  &::-moz-range-track {
+    height: --spacing(1);
+    border-radius: --spacing(1);
+    background: var(--range-track);
+  }
+  &::-webkit-slider-thumb {
+    appearance: none;
+    margin-top: --spacing(-1.5);
+    width: --spacing(4);
+    height: --spacing(4);
+    border-radius: 50%;
+    background: white;
+    box-shadow:
+      0 0 0 --spacing(0.25) color-mix(in srgb, var(--color-ink) 12%, transparent),
+      0 --spacing(0.25) --spacing(0.75) color-mix(in srgb, var(--color-ink) 25%, transparent);
+  }
+  &::-moz-range-thumb {
+    width: --spacing(4);
+    height: --spacing(4);
+    border: 0;
+    border-radius: 50%;
+    background: white;
+    box-shadow:
+      0 0 0 --spacing(0.25) color-mix(in srgb, var(--color-ink) 12%, transparent),
+      0 --spacing(0.25) --spacing(0.75) color-mix(in srgb, var(--color-ink) 25%, transparent);
   }
 }

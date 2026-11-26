@@ -53,3 +53,16 @@ export function levelForKey(key: string, level: number): number | null {
       return null;
   }
 }
+
+/** The popover slider's scale, counted in x1.1 steps from 100%, so equal distances are equal ratios (as in the real app). */
+export const STEPS_MAX = Math.log(MAX / MIN) / Math.log(STEP);
+
+/** Steps from 100% for a level. */
+export function levelToSteps(level: number): number {
+  return Math.log(clampLevel(level) / MIN) / Math.log(STEP);
+}
+
+/** Level for a number of steps from 100%, the inverse of levelToSteps. */
+export function stepsToLevel(steps: number): number {
+  return clampLevel(MIN * STEP ** steps);
+}

@@ -10,14 +10,91 @@
     <meta property="og:description" content="Your MacBook Pro's XDR screen goes brighter than macOS lets it. Sunny turns the sun up." />
     <meta property="og:type" content="website" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <script type="module" src="/src/main.ts"></script>
   </head>
-  <body class="bg-paper font-sans text-base text-ink antialiased">
+  <body class="bg-sea font-sans text-base text-ink antialiased">
     <main
       id="sky"
       data-dusk
-      class="group relative grid min-h-svh cursor-ns-resize grid-cols-1 grid-rows-sky overflow-hidden bg-linear-to-b from-sky-top via-sky-mid to-sky-low px-gutter text-ink select-none data-dusk:text-cream md:min-h-hero md:grid-cols-2 md:grid-rows-sky-wide md:gap-x-fluid-l"
+      class="group relative grid min-h-svh cursor-ns-resize grid-cols-1 grid-rows-sky overflow-hidden bg-linear-to-b from-sky-top via-sky-mid to-sky-low px-gutter pt-8 text-ink select-none data-dusk:text-cream md:min-h-hero md:grid-cols-2 md:grid-rows-sky-wide md:gap-x-fluid-l md:pt-6"
     >
+      <!-- A simulated macOS menu bar, with Sunny's tray item and its popover (menubar.ts) -->
+      <div
+        data-menubar
+        class="absolute inset-x-0 top-0 z-10 flex h-8 cursor-default items-center justify-between gap-4 px-gutter text-sm md:h-6"
+      >
+        <!-- The bar's translucency is its own layer: a backdrop filter on the bar itself would keep the popover's from seeing the page -->
+        <div class="absolute inset-0 -z-1 bg-cream/25 backdrop-blur-md backdrop-saturate-150 group-data-dusk:bg-ink/20" aria-hidden="true"></div>
+        <div class="flex min-w-0 items-center gap-4" aria-hidden="true">
+          <svg class="size-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="2" /><circle cx="8" cy="8" r="2.5" /></svg>
+          <span class="font-bold">Sunny</span>
+          <span class="hidden gap-4 md:flex"><span>File</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span></span>
+        </div>
+        <div class="flex shrink-0 items-center gap-3">
+          <div class="flex h-full items-center md:relative">
+            <button
+              id="tray-item"
+              type="button"
+              class="flex h-6 items-center gap-1 rounded-sm px-2 tabular-nums hover:bg-current/15 focus-visible:outline-2 focus-visible:outline-offset-0 aria-expanded:bg-current/20 md:h-5"
+              aria-label="Sunny"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="tray-popover"
+            >
+              <svg class="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                <circle cx="8" cy="8" r="3" fill="currentColor" />
+                <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" />
+              </svg>
+              <span id="tray-title" aria-hidden="true"></span>
+            </button>
+            <div
+              id="tray-popover"
+              role="dialog"
+              aria-label="Sunny"
+              hidden
+              class="absolute inset-x-gutter top-full mt-1.5 flex cursor-default flex-col gap-3 rounded-xl bg-cream/85 px-4 pt-3 pb-2 text-ink shadow-2xl ring-1 ring-ink/10 backdrop-blur-xl backdrop-saturate-150 md:right-0 md:left-auto md:w-80 motion-safe:transition motion-safe:duration-150 starting:-translate-y-1 starting:opacity-0"
+            >
+              <div class="flex items-center justify-between">
+                <h2 class="font-semibold">Sunny</h2>
+                <label class="flex items-center gap-2 opacity-80">
+                  Boost
+                  <button
+                    id="tray-switch"
+                    type="button"
+                    role="switch"
+                    aria-checked="false"
+                    class="group/switch inline-flex h-4.5 w-8 shrink-0 items-center rounded-full bg-ink/25 p-0.5 aria-checked:bg-boost motion-safe:transition-colors"
+                  >
+                    <span class="block size-3.5 rounded-full bg-white shadow-sm group-aria-checked/switch:translate-x-3.5 motion-safe:transition-transform"></span>
+                  </button>
+                </label>
+              </div>
+              <div class="flex items-center justify-between">
+                <button id="tray-dimmer" type="button" aria-label="Dimmer (divide by 1.1)" class="grid size-8 place-items-center rounded-full bg-ink/10 text-lg leading-none hover:bg-ink/15 active:bg-ink/20 disabled:opacity-40">&minus;</button>
+                <output id="tray-level" aria-live="polite" class="text-xl font-semibold tabular-nums">100<span class="text-lg font-normal opacity-55">%</span></output>
+                <button id="tray-brighter" type="button" aria-label="Brighter (multiply by 1.1)" class="grid size-8 place-items-center rounded-full bg-ink/10 text-lg leading-none hover:bg-ink/15 active:bg-ink/20 disabled:opacity-40">+</button>
+              </div>
+              <input id="tray-slider" type="range" min="0" max="11.6" step="any" value="0" aria-label="Brightness" class="range-tray w-full" />
+              <div class="mt-1 flex items-center justify-between border-t border-ink/10 pt-1.5 opacity-80">
+                <label class="flex items-center gap-2 opacity-60">
+                  <button type="button" role="switch" aria-checked="false" disabled class="inline-flex h-4.5 w-8 shrink-0 items-center rounded-full bg-ink/25 p-0.5">
+                    <span class="block size-3.5 rounded-full bg-white shadow-sm"></span>
+                  </button>
+                  Open at login
+                </label>
+                <button id="tray-quit" type="button" class="rounded-sm px-2 py-0.5 hover:bg-ink/5">Quit</button>
+              </div>
+            </div>
+          </div>
+          <span class="hidden items-center gap-3 sm:flex" aria-hidden="true">
+            <svg class="h-3 w-6" viewBox="0 0 24 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="20" height="11" rx="3" stroke-opacity="0.5" /><rect x="2.5" y="2.5" width="12" height="7" rx="1.5" fill="currentColor" stroke="none" /><path d="M22.5 4.5v3" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.5" /></svg>
+            <svg class="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 6a9.5 9.5 0 0 1 13 0" /><path d="M4 8.8a6 6 0 0 1 8 0" /><circle cx="8" cy="12" r="1.2" fill="currentColor" stroke="none" /></svg>
+          </span>
+          <time id="clock" class="whitespace-nowrap tabular-nums" aria-hidden="true"></time>
+        </div>
+      </div>
+
       <header data-intro class="relative z-3 col-start-1 row-start-1 min-w-0 cursor-auto pt-fluid-m select-text md:self-center md:py-fluid-s">
         <p class="text-display font-semibold font-stretch-condensed text-shadow-offset">Sunny</p>
         <h1 class="mt-fluid-s max-w-headline text-lg font-medium text-balance wrap-break-word">Your MacBook Pro's XDR screen goes brighter than macOS lets it. Sunny turns the sun up.</h1>
@@ -78,12 +155,12 @@
       </div>
     </main>
 
-    <section class="px-gutter pt-fluid-m pb-fluid-xl" aria-label="Details">
+    <section id="details" data-dusk class="bg-sea px-gutter pt-fluid-m pb-fluid-xl text-ink data-dusk:text-cream" aria-label="Details">
       <div class="max-w-2xl">
-        <p class="mb-4">Also in the terminal: <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity 150</code>, <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity +</code>, <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity -</code>, <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity off</code>. Each <code class="rounded-sm bg-peach px-1.5 py-0.5 font-mono text-sm font-semibold whitespace-nowrap">+</code> is one x1.1 step, from 100 to 300%.</p>
+        <p class="mb-4">Also in the terminal: <code class="rounded-sm bg-peach px-1.5 text-ink py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity 150</code>, <code class="rounded-sm bg-peach px-1.5 text-ink py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity +</code>, <code class="rounded-sm bg-peach px-1.5 text-ink py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity -</code>, <code class="rounded-sm bg-peach px-1.5 text-ink py-0.5 font-mono text-sm font-semibold whitespace-nowrap">luminosity off</code>. Each <code class="rounded-sm bg-peach px-1.5 text-ink py-0.5 font-mono text-sm font-semibold whitespace-nowrap">+</code> is one x1.1 step, from 100 to 300%.</p>
         <p class="mb-4">Not notarized yet: if you used the download, the first time right-click Sunny and choose Open (or System Settings &gt; Privacy &amp; Security &gt; Open Anyway). The Homebrew install takes care of this for you.</p>
         <p class="mb-4">A brighter screen runs warmer and drains the battery faster, and the brightest colours can clip. Needs a MacBook Pro 14" or 16" with Liquid Retina XDR display, M1 Pro or later.</p>
-        <footer class="mt-8 border-t-2 border-blush pt-4 text-sm">MIT license &middot; <a class="underline" href="https://github.com/abernier/sunny">github.com/abernier/sunny</a></footer>
+        <footer class="mt-8 border-t-2 border-current/20 pt-4 text-sm">MIT license &middot; <a class="underline" href="https://github.com/abernier/sunny">github.com/abernier/sunny</a></footer>
       </div>
     </section>
   </body>
