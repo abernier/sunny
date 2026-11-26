@@ -1,0 +1,7 @@
+node_modules/
+# What the captures and the render write: kept out of the repository.
+captures/
+frames/
+*.mp4
+*.wav
+sunny-reel-poster.png
