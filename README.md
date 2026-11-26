@@ -5,15 +5,29 @@ cap, up to 3x, using the headroom macOS keeps for HDR content.
 
 ## The menu bar app
 
-Download `Sunny-arm64.dmg` from the [latest release](https://github.com/abernier/sunny/releases/latest)
-(Apple silicon, macOS 13 or later), open it and drag Sunny to Applications.
+With [Homebrew](https://brew.sh), from this repository as a tap (Apple silicon, macOS 13 or later):
+
+```bash
+brew tap abernier/sunny https://github.com/abernier/sunny
+```
+
+```bash
+brew install --cask abernier/sunny/sunny
+```
+
+Use the full name `abernier/sunny/sunny`: Homebrew refuses to load a cask from an untrusted tap by its short
+name. The cask also clears the quarantine flag, so Gatekeeper lets the app open; `brew upgrade` follows new
+releases, and `brew uninstall --cask sunny` quits the app and stops the boost.
+
+Or download `Sunny-arm64.dmg` from the [latest release](https://github.com/abernier/sunny/releases/latest),
+open it and drag Sunny to Applications.
 
 A sun appears in the menu bar. Click it for the popover: an on/off switch, the level, "-" and "+" (each
 divides or multiplies by 1.1), a 100-300% slider, "Open at login" and Quit. Right-click it for Quit. While
 boosted, the level shows beside the icon.
 
-The app is signed ad hoc and not notarised (there is no Apple Developer ID behind it), so the first opening
-is refused by Gatekeeper. Either right-click Sunny.app in Applications and choose Open, then Open again, or
+The app is signed ad hoc and not notarised (there is no Apple Developer ID behind it), so when installed from
+the DMG the first opening is refused by Gatekeeper. Either right-click Sunny.app in Applications and choose Open, then Open again, or
 allow it in System Settings > Privacy & Security ("Open Anyway"). From a terminal,
 `xattr -dr com.apple.quarantine /Applications/Sunny.app` does the same.
 
@@ -66,10 +80,12 @@ boost/    luminosity-boost, the Swift program
 shell/    luminosity, the bash function
 tray/     the menu bar app (Electron, React): see tray/README.md
 site/     the landing page
+Casks/    sunny.rb, the Homebrew cask (this repository is its tap)
 install.sh
 ```
 
-Releases are built by `.github/workflows/release.yml` when a `v*` tag is pushed.
+Releases are built by `.github/workflows/release.yml` when a `v*` tag is pushed; it also bumps
+`Casks/sunny.rb` on main. Never rebuild a published release in place: the cask pins its sha256.
 
 ## License
 

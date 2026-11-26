@@ -1,5 +1,5 @@
 # Builds Sunny.app for Apple silicon and publishes Sunny-arm64.dmg and Sunny-arm64.zip.
-# A tag v* makes (or updates) the GitHub Release of that tag; the site links to
+# A tag v* makes the GitHub Release of that tag and bumps Casks/sunny.rb on main; the site links to
 # https://github.com/abernier/sunny/releases/latest/download/Sunny-arm64.dmg.
 # Run by hand, it builds and keeps the files as a workflow artifact only.
 # The app is signed ad hoc and not notarised: there are no Apple credentials here.
@@ -64,6 +64,8 @@ jobs:
             tray/release/Sunny-arm64.zip
           if-no-files-found: error
 
+      # A published release is never rebuilt in place: replacing its assets would change
+      # their sha256 and break the Homebrew cask that pins it. Tag a new version instead.
       - name: Publish the GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
@@ -71,7 +73,23 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" release/Sunny-arm64.dmg release/Sunny-arm64.zip --clobber
-          else
-            gh release create "$TAG" release/Sunny-arm64.dmg release/Sunny-arm64.zip --title "Sunny $TAG" --generate-notes
+            echo "::error::Release $TAG already exists; tag a new version instead of replacing its assets."
+            exit 1
           fi
+          gh release create "$TAG" release/Sunny-arm64.dmg release/Sunny-arm64.zip --title "Sunny $TAG" --generate-notes
+
+      - name: Bump the Homebrew cask on main
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: .
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          sha=$(shasum -a 256 tray/release/Sunny-arm64.dmg | cut -d' ' -f1)
+          git fetch --depth=1 origin main
+          git checkout -B main origin/main
+          sed -i '' -E "s/^  version \".*\"/  version \"${TAG#v}\"/; s/^  sha256 \".*\"/  sha256 \"$sha\"/" Casks/sunny.rb
+          git diff --quiet && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Bump the Homebrew cask to $TAG"
+          git push origin main
