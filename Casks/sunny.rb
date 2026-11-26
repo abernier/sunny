@@ -25,10 +25,10 @@ cask "sunny" do
 
   # The app is signed ad hoc, not notarised: without this, Gatekeeper refuses to open
   # the copy Homebrew downloaded (it carries the quarantine attribute).
-  postflight do
-    system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Sunny.app"],
-                   must_succeed: false
+  postflight_steps do
+    run "/usr/bin/xattr",
+        args:         ["-dr", "com.apple.quarantine", "{{appdir}}/Sunny.app"],
+        must_succeed: false
   end
 
   # The boost helper runs detached from the app; stop it so the display goes back to normal.
