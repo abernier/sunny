@@ -1,0 +1,77 @@
+# Builds Sunny.app for Apple silicon and publishes Sunny-arm64.dmg and Sunny-arm64.zip.
+# A tag v* makes (or updates) the GitHub Release of that tag; the site links to
+# https://github.com/abernier/sunny/releases/latest/download/Sunny-arm64.dmg.
+# Run by hand, it builds and keeps the files as a workflow artifact only.
+# The app is signed ad hoc and not notarised: there are no Apple credentials here.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: tray
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: tray/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: tray/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Check
+        run: |
+          pnpm check
+          pnpm test
+
+      - name: Build Sunny-arm64.dmg and Sunny-arm64.zip
+        env:
+          # A tag v1.2.3 gives the app version 1.2.3.
+          SUNNY_VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          export SUNNY_VERSION="${SUNNY_VERSION#v}"
+          [ -n "$SUNNY_VERSION" ] || unset SUNNY_VERSION
+          pnpm dist
+          test -f release/Sunny-arm64.dmg
+          test -x release/mac-arm64/Sunny.app/Contents/Resources/luminosity-boost
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sunny-arm64
+          path: |
+            tray/release/Sunny-arm64.dmg
+            tray/release/Sunny-arm64.zip
+          if-no-files-found: error
+
+      - name: Publish the GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/Sunny-arm64.dmg release/Sunny-arm64.zip --clobber
+          else
+            gh release create "$TAG" release/Sunny-arm64.dmg release/Sunny-arm64.zip --title "Sunny $TAG" --generate-notes
+          fi

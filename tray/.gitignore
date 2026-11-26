@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-electron/
+out/
+release/
+release-*/
+.stage/
+*.log
+.DS_Store

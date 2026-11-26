@@ -1,0 +1,14 @@
+@layer ui-sdk;
+@import "tailwindcss";
+
+/* The window is transparent over the system's popover vibrancy, which follows light and dark by itself. */
+html,
+body,
+#root {
+	height: 100%;
+	margin: 0;
+	background: transparent;
+	font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	cursor: default;
+}
