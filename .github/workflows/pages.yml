@@ -26,6 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/configure-pages@v6
+      # Pages serves files with a 10-minute cache: give the CSS and JS a new URL on each
+      # deploy, so a browser never pairs the new HTML with the old stylesheet.
+      - name: Version asset URLs
+        run: sed -i -E "s/(style\.css|main\.js)\"/\1?v=${GITHUB_SHA::7}\"/g" site/index.html && grep -nE "style.css|main.js" site/index.html
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
