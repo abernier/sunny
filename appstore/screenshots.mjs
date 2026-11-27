@@ -2,6 +2,7 @@
 //
 //   node appstore/screenshots.mjs            -> appstore/screenshots/
 //   node appstore/screenshots.mjs --out DIR  -> DIR, to compare with the committed ones first
+//   node appstore/screenshots.mjs --lang fr  -> appstore/screenshots/fr/: the French listing's, the popover in French
 //
 // What they show of the app is captured, not mocked: the popover is the app's SwiftUI view
 // (native/Sources/SunnyKit/PopoverView.swift), drawn offscreen at three pixels per point by
@@ -20,16 +21,35 @@ import { launch } from "../reel/browser.mjs";
 const dir = import.meta.dirname;
 const root = path.join(dir, "..");
 const native = path.join(root, "native");
-const outArg = process.argv.indexOf("--out");
-const out = outArg > 0 ? path.resolve(process.argv[outArg + 1]) : path.join(dir, "screenshots");
+const arg = (name) => {
+	const i = process.argv.indexOf(`--${name}`);
+	return i > 0 ? process.argv[i + 1] : undefined;
+};
+/** The listing's language: "en" (the default) or "fr". */
+const lang = arg("lang") ?? "en";
+const out = arg("out") ? path.resolve(arg("out")) : path.join(dir, "screenshots", ...(lang === "en" ? [] : [lang]));
 
 /** The shots, in store order. `level` is the popover's level; `cursor` points at a part of it. */
 const SHOTS = [
-	{ file: "1-brighter-than-max.png", headline: "Brighter than&nbsp;max.", level: 200 },
-	{ file: "2-up-to-300-percent.png", headline: "Up to 300% brightness.", level: 300 },
-	{ file: "3-one-slider.png", headline: "One slider in your menu&nbsp;bar.", level: 150, cursor: "thumb" },
-	{ file: "4-back-to-normal.png", headline: "Back to normal in one&nbsp;click.", level: 100, cursor: "switch" },
+	{ file: "1-brighter-than-max.png", level: 200 },
+	{ file: "2-up-to-300-percent.png", level: 300 },
+	{ file: "3-one-slider.png", level: 150, cursor: "thumb" },
+	{ file: "4-back-to-normal.png", level: 100, cursor: "switch" },
 ];
+
+/** Each language's headlines (in SHOTS' order) and menu bar clock. */
+const TEXT = {
+	en: {
+		headlines: ["Brighter than&nbsp;max.", "Up to 300% brightness.", "One slider in your menu&nbsp;bar.", "Back to normal in one&nbsp;click."],
+		clock: "Thu 26 Nov&nbsp;&nbsp;9:41",
+	},
+	fr: {
+		headlines: ["Plus lumineux que le&nbsp;max.", "Jusqu’à 300&nbsp;% de luminosité.", "Un curseur dans votre barre des&nbsp;menus.", "Retour à la normale en un&nbsp;clic."],
+		clock: "jeu. 26 nov.&nbsp;&nbsp;9:41",
+	},
+};
+if (!TEXT[lang]) throw new Error(`no text for --lang ${lang}: ${Object.keys(TEXT).join(", ")}`);
+for (const [i, shot] of SHOTS.entries()) shot.headline = TEXT[lang].headlines[i];
 
 // The site's sky at a moment of the day (site/src/palette.ts), and where the sun is for a level (site/src/slider.ts).
 const STOPS = [
@@ -69,7 +89,7 @@ try {
 /** The popover at each shot's level, dark as the menu bar over these skies, with the parts a cursor points at. */
 function capturePopover() {
 	const levels = SHOTS.map((shot) => shot.level).join(",");
-	execFileSync("swift", ["run", "--package-path", native, "boost-check", "popover", captures, "--levels", levels], { stdio: "inherit" });
+	execFileSync("swift", ["run", "--package-path", native, "boost-check", "--lang", lang, "popover", captures, "--levels", levels], { stdio: "inherit" });
 	const manifest = JSON.parse(fs.readFileSync(path.join(captures, "popover.json"), "utf8"));
 	const parts = {};
 	for (const shot of SHOTS) {
@@ -152,7 +172,7 @@ html, body { width: 1440px; height: 900px; overflow: hidden; background: ${sky.s
 		<div class="item on" id="tray" style="position: absolute; left: ${trayX}px; transform: translateX(-50%)"><img src="${glyph}" alt="">${shot.level > 100 ? ` ${shot.level}%` : ""}</div>
 		<div class="item"><svg width="17" height="13" viewBox="0 0 17 13" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.6a10 10 0 0 1 14 0M4 7.3a6.4 6.4 0 0 1 9 0"/><circle cx="8.5" cy="10.4" r="1.3" fill="#fff" stroke="none"/></svg></div>
 		<div class="item"><svg width="26" height="12" viewBox="0 0 26 12"><rect x="0.6" y="0.6" width="22" height="10.8" rx="3" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.1"/><rect x="2.3" y="2.3" width="15.5" height="7.4" rx="1.6" fill="#fff"/><path d="M24 4.2v3.6a1.8 1.8 0 0 0 0-3.6z" fill="rgba(255,255,255,.55)"/></svg></div>
-		<div class="item">Thu 26 Nov&nbsp;&nbsp;9:41</div>
+		<div class="item">${TEXT[lang].clock}</div>
 	</div>
 	<div id="pop"><div class="material"></div><img src="${popover}" alt=""></div>
 	${

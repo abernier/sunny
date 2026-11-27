@@ -7,7 +7,7 @@
 #   scripts/build.sh mas    build/mas/Sunny.app and build/mas/Sunny-<version>.pkg: universal, signed for the store
 #
 # Environment:
-#   SUNNY_VERSION       CFBundleShortVersionString (default 0.3.0)
+#   SUNNY_VERSION       CFBundleShortVersionString (default 0.4.0)
 #   SUNNY_BUILD         CFBundleVersion, which has to grow with each store upload (default 1; dist: the version)
 #   SUNNY_MAS_PROFILE   the provisioning profile to embed (default .signing/sunny-mas.provisionprofile of the main checkout)
 #   SUNNY_MAS_IDENTITY  the app's signing identity (default: the "Apple Distribution" one in the keychain)
@@ -24,7 +24,7 @@ esac
 here=$(cd "$(dirname "$0")/.." && pwd)
 # The main checkout, also from a git worktree: .signing/ (not committed) lives there.
 repo=$(cd "$(git -C "$here" rev-parse --path-format=absolute --git-common-dir)/.." && pwd)
-version=${SUNNY_VERSION:-0.3.0}
+version=${SUNNY_VERSION:-0.4.0}
 if [ "$mode" = dist ]; then build=${SUNNY_BUILD:-$version}; else build=${SUNNY_BUILD:-1}; fi
 out="$here/build/$mode"
 app="$out/Sunny.app"
@@ -56,6 +56,13 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 # executable gets the SDK it was really built with.
 xcrun vtool -set-build-version macos 13.0 "$sdk_version" -replace -output "$app/Contents/MacOS/Sunny" "$bin/Sunny" 2>/dev/null
 cp "$here/Resources/AppIcon.icns" "$here/Resources/MenuBarIconTemplate.png" "$here/Resources/MenuBarIconTemplate@2x.png" "$app/Contents/Resources/"
+# The strings (English and French) of SunnyKit and of KeyboardShortcuts: SwiftPM resource bundles, which their code
+# looks for in Contents/Resources. Without their own signatures, which the app's seals over.
+for bundle in Sunny_SunnyKit KeyboardShortcuts_KeyboardShortcuts; do
+  [ -d "$bin/$bundle.bundle" ] || { echo "no $bundle.bundle in $bin" >&2; exit 1; }
+  ditto "$bin/$bundle.bundle" "$app/Contents/Resources/$bundle.bundle"
+  rm -rf "$app/Contents/Resources/$bundle.bundle/Contents/_CodeSignature"
+done
 printf 'APPL????' > "$app/Contents/PkgInfo"
 
 cat > "$app/Contents/Info.plist" <<EOF
@@ -73,6 +80,11 @@ cat > "$app/Contents/Info.plist" <<EOF
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.abernier.sunny</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>fr</string>
+	</array>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

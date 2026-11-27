@@ -20,8 +20,9 @@ Or download `Sunny-arm64.dmg` from the [latest release](https://github.com/abern
 open it and drag Sunny to Applications.
 
 A sun appears in the menu bar. Click it for the popover: a Boost switch, the level, "-" and "+" (each
-divides or multiplies by 1.1), a 100-300% slider, "Open at login" and Quit. Right-click it for Quit. While
-boosted, the level shows beside the icon. The app is native (SwiftUI) and does the boost in its own process:
+divides or multiplies by 1.1), a 100-300% slider. Scroll over it to change the level. Right-click it for Settings (icon, percentage,
+open at login, a global shortcut, turning the boost off on battery), About, Rate on the App Store and Quit. While
+boosted, the level shows beside the icon. In English and French. The app is native (SwiftUI) and does the boost in its own process:
 see [native/README.md](native/README.md).
 
 The app is signed ad hoc and not notarised (there is no Apple Developer ID behind it), so when installed from

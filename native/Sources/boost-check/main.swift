@@ -4,6 +4,8 @@
 //   swift run boost-check hold 200 the level 200 until killed (to check what a crash leaves behind)
 //   swift run boost-check render . the popover and the menu bar item, drawn offscreen (no boost)
 //   swift run boost-check popover  the popover's pictures for the reel and the screenshots (Capture.swift)
+//   swift run boost-check review   the popover, Settings and the menu, drawn offscreen for a review (Review.swift)
+//   --lang fr                      before any of these: in that language
 import AppKit
 import CoreGraphics
 import SunnyCore
@@ -30,7 +32,7 @@ func settle(_ seconds: Double = 1.2) async {
 
 /// Draws a view offscreen into a PNG, AppKit controls included (ImageRenderer leaves them out).
 @MainActor
-func render<V: View>(_ view: V, to path: String, dark: Bool) {
+func render<V: View>(_ view: V, to path: String, dark: Bool, scale: CGFloat = 2) {
   let host = NSHostingView(rootView: view)
   host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
   host.frame = NSRect(origin: .zero, size: host.fittingSize)
@@ -40,15 +42,28 @@ func render<V: View>(_ view: V, to path: String, dark: Bool) {
   window.contentView = host
   host.layoutSubtreeIfNeeded()
   host.display()
-  guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
+  guard let bitmap = NSBitmapImageRep(
+    bitmapDataPlanes: nil, pixelsWide: Int(host.bounds.width * scale), pixelsHigh: Int(host.bounds.height * scale),
+    bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .calibratedRGB, bytesPerRow: 0, bitsPerPixel: 0
+  ) else { return }
+  bitmap.size = host.bounds.size
   host.cacheDisplay(in: host.bounds, to: bitmap)
-  try? bitmap.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
+  try? bitmap.retagging(with: .sRGB)?.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
   print("drew \(path) (\(Int(host.frame.width))x\(Int(host.frame.height)) pt)")
 }
 
 @MainActor
 func run() async -> Int32 {
-  let arguments = CommandLine.arguments.dropFirst()
+  var arguments = CommandLine.arguments.dropFirst()
+  // -AppleLanguages (fr), from --lang fr (relaunchForLanguage): the language to name the pictures after.
+  if let i = arguments.firstIndex(of: "-AppleLanguages"), arguments.index(after: i) < arguments.endIndex {
+    language = arguments[arguments.index(after: i)].trimmingCharacters(in: CharacterSet(charactersIn: "()\" "))
+    arguments.removeSubrange(i...arguments.index(after: i))
+  }
+
+  if arguments.first == "review" {
+    return captureReview(to: arguments.dropFirst().first ?? "build/review")
+  }
 
   if arguments.first == "render" {
     // The popover off, then on at 150%, in light and dark: a preview model, the display is left alone.
@@ -59,7 +74,7 @@ func run() async -> Int32 {
     await settle(0.1)
     render(PopoverView(model: preview), to: "\(dir)/popover-on.png", dark: false)
     render(PopoverView(model: preview), to: "\(dir)/popover-on-dark.png", dark: true)
-    render(MenuBarLabel(model: preview).padding(4), to: "\(dir)/menubar-on.png", dark: true)
+    render(IconsPicture(level: 150), to: "\(dir)/menubar-on.png", dark: true)
     return 0
   }
 
@@ -134,6 +149,7 @@ func run() async -> Int32 {
   return failures == 0 ? 0 : 1
 }
 
+relaunchForLanguage()
 setvbuf(stdout, nil, _IONBF, 0)
 let app = NSApplication.shared
 app.setActivationPolicy(.prohibited)
