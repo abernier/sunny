@@ -6,8 +6,9 @@ the gamma table scaled by the level, capped by that headroom.
 
 - A sun in the menu bar, with the level beside it while boosted; its tooltip says the state. No Dock icon.
 - Click it: the popover. A Boost switch (back on to the last boosted level, kept across launches), the level,
-  "-" and "+" (x1.1 steps), a 100-300% slider (logarithmic: one unit is one x1.1 step), "Open at login" and
-  Quit. Keys in the popover: arrows move about 1%, Page Up/Down one x1.1 step, Home/End go to 100% and 300%.
+  "-" and "+" (x1.1 steps), a 100-300% slider (logarithmic: one unit is one x1.1 step; drawn as Control Center
+  draws its sliders on macOS 26: a track that fills between a small sun and a big one, no knob), "Open at login"
+  and Quit. Keys in the popover: arrows move about 1%, Page Up/Down one x1.1 step, Home/End go to 100% and 300%.
 - Right-click it: a menu with Quit.
 - The boost never outlives the app: Quit, logout, SIGTERM/SIGINT/SIGHUP restore the gamma, and the system drops
   the table by itself if the app crashes.

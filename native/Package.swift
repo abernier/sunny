@@ -17,7 +17,13 @@ let package = Package(
     .target(name: "SunnyCore"),
     .target(name: "SunnyKit", dependencies: ["SunnyCore"]),
     .executableTarget(name: "Sunny", dependencies: ["SunnyCore", "SunnyKit"]),
-    .executableTarget(name: "boost-check", dependencies: ["SunnyCore", "SunnyKit"]),
+    .executableTarget(
+      name: "boost-check",
+      dependencies: ["SunnyCore", "SunnyKit"],
+      // SwiftPM records the deployment target as the SDK version, and SwiftUI then draws its pre-26 controls (a
+      // knob on the slider). The app gets its real SDK from scripts/build.sh; the pictures drawn here must match it.
+      linkerSettings: [.unsafeFlags(["-Xlinker", "-platform_version", "-Xlinker", "macos", "-Xlinker", "13.0", "-Xlinker", "26.0"])]
+    ),
     .testTarget(name: "SunnyCoreTests", dependencies: ["SunnyCore"]),
   ]
 )

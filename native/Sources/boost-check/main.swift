@@ -36,7 +36,7 @@ func render<V: View>(_ view: V, to path: String, dark: Bool) {
   host.frame = NSRect(origin: .zero, size: host.fittingSize)
   host.wantsLayer = true
   host.layer?.backgroundColor = (dark ? NSColor(white: 0.17, alpha: 1) : NSColor(white: 0.93, alpha: 1)).cgColor
-  let window = NSWindow(contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
+  let window = KeyLookingWindow(contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
   window.contentView = host
   host.layoutSubtreeIfNeeded()
   host.display()

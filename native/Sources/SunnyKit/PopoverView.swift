@@ -15,11 +15,15 @@ public struct PopoverView: View {
       HStack {
         Text("Sunny").font(.system(size: 13, weight: .semibold))
         Spacer()
+        Text("Boost")
+          .foregroundStyle(.secondary)
+          .accessibilityHidden(true) // the switch says it
         Toggle("Boost", isOn: Binding(get: { model.isOn }, set: { model.toggle($0) }))
           .toggleStyle(.switch)
           .controlSize(.small)
           .tint(.orange)
-          .foregroundStyle(.secondary)
+          .labelsHidden()
+          .popoverPart(.boostSwitch)
       }
 
       HStack {
@@ -39,21 +43,30 @@ public struct PopoverView: View {
           .accessibilityLabel("Brighter (multiply by 1.1)")
       }
 
-      Slider(
-        value: Binding(
-          get: { dragged ?? SliderScale.position(of: model.shownLevel) },
-          set: { position in
-            let snapped = (position / SliderScale.fineStep).rounded() * SliderScale.fineStep
-            dragged = snapped
-            model.set(SliderScale.level(at: snapped))
-          }
-        ),
-        in: 0...SliderScale.end,
-        onEditingChanged: { editing in if !editing { dragged = nil } }
-      )
-      .tint(.orange)
-      .accessibilityLabel("Brightness")
-      .accessibilityValue("\(model.shownLevel)%")
+      // The Control Center look: a small sun, a thin track that fills from the left with no knob, a big sun.
+      HStack(spacing: 8) {
+        Image(systemName: "sun.min").font(.system(size: 11)).accessibilityHidden(true)
+        Slider(
+          value: Binding(
+            get: { dragged ?? SliderScale.position(of: model.shownLevel) },
+            set: { position in
+              let snapped = (position / SliderScale.fineStep).rounded() * SliderScale.fineStep
+              dragged = snapped
+              model.set(SliderScale.level(at: snapped))
+            }
+          ),
+          in: 0...SliderScale.end,
+          label: { Text("Brightness") },
+          onEditingChanged: { editing in if !editing { dragged = nil } }
+        )
+        .labelsHidden()
+        .knobless()
+        .tint(.primary)
+        .accessibilityValue("\(model.shownLevel)%")
+        .popoverPart(.slider)
+        Image(systemName: "sun.max").font(.system(size: 16)).accessibilityHidden(true)
+      }
+      .foregroundStyle(.secondary)
 
       Divider()
 
@@ -74,6 +87,7 @@ public struct PopoverView: View {
     .padding(.top, 12)
     .padding(.bottom, 10)
     .frame(width: 300)
+    .coordinateSpace(name: PopoverPart.space)
   }
 }
 
@@ -114,4 +128,39 @@ public struct MenuBarLabel: View {
     image.isTemplate = true
     return image
   }()
+}
+
+extension View {
+  /// A slider without its knob, where the system has one (macOS 26 and later); the plain slider before.
+  @ViewBuilder func knobless() -> some View {
+    if #available(macOS 26, *) {
+      sliderThumbVisibility(.hidden)
+    } else {
+      self
+    }
+  }
+}
+
+/// The parts of the popover that boost-check's pictures point at, with their frames in points from the popover's
+/// top-left corner (`onPreferenceChange(PopoverPart.Frames.self)`).
+public enum PopoverPart: Hashable, Sendable {
+  case boostSwitch
+  case slider
+
+  static let space = "popover"
+
+  public struct Frames: PreferenceKey {
+    public static let defaultValue: [PopoverPart: CGRect] = [:]
+    public static func reduce(value: inout [PopoverPart: CGRect], nextValue: () -> [PopoverPart: CGRect]) {
+      value.merge(nextValue()) { $1 }
+    }
+  }
+}
+
+extension View {
+  func popoverPart(_ part: PopoverPart) -> some View {
+    background(GeometryReader { proxy in
+      Color.clear.preference(key: PopoverPart.Frames.self, value: [part: proxy.frame(in: .named(PopoverPart.space))])
+    })
+  }
 }

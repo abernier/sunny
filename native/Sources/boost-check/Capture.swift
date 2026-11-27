@@ -40,7 +40,7 @@ struct Frame: Encodable {
   var pos: Double
   var level: Int
   var file: String
-  /// The centre of the slider's knob.
+  /// Where the slider's fill ends, on the track's middle: the point the pointer drags (the slider has no knob).
   var knob: Point
 }
 
@@ -48,12 +48,12 @@ struct Frame: Encodable {
 struct Manifest: Encodable {
   /// [width, height] in points.
   var size: [Double]
-  /// The knob's travel: x is its centre at the slider's start, width the distance to its centre at the end;
-  /// y and height are those of the slider's bar.
+  /// The fill's travel: x is where it ends at the slider's start, width the distance to where it ends at the end;
+  /// y and height are those of the slider.
   var track: Box
   /// The slider's end, in x1.1 steps (SliderScale.end).
   var end: Double
-  /// The knob: the y of its centre and its width.
+  /// The y of the track's middle, where the pointer grabs it.
   var thumb: Thumb
   /// The centre of the Boost switch.
   var `switch`: Point
@@ -61,13 +61,12 @@ struct Manifest: Encodable {
 
   struct Thumb: Encodable {
     var y: Double
-    var size: Double
   }
 }
 
 /// A window that draws its controls as the key window does (tinted), as the open popover's does, while it is
 /// never shown.
-private final class KeyLookingWindow: NSWindow {
+final class KeyLookingWindow: NSWindow {
   override var isKeyWindow: Bool { true }
   override var isMainWindow: Bool { true }
   // AppKit asks this (not public API: this tool is not part of the app) before it tints a control; without it,
@@ -83,10 +82,20 @@ final class PopoverCanvas {
   let model = SunnyModel(preview: Level.min)
   private let host: NSHostingView<AnyView>
   private let window: NSWindow
+  /// Where the popover's parts are, as the view reports them (PopoverPart).
+  private let parts = Parts()
+
+  private final class Parts {
+    var frames: [PopoverPart: CGRect] = [:]
+  }
 
   init() {
+    let parts = parts
     host = NSHostingView(rootView: AnyView(
-      PopoverView(model: model).environment(\.colorScheme, .dark).environment(\.controlActiveState, .key)
+      PopoverView(model: model)
+        .onPreferenceChange(PopoverPart.Frames.self) { frames in MainActor.assumeIsolated { parts.frames = frames } }
+        .environment(\.colorScheme, .dark)
+        .environment(\.controlActiveState, .key)
     ))
     host.appearance = NSAppearance(named: .darkAqua)
     window = KeyLookingWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: false)
@@ -115,8 +124,8 @@ final class PopoverCanvas {
     }
   }
 
-  /// The PNG of what is shown, at `scale` pixels per point, transparent behind the controls.
-  func png() -> Data? {
+  /// What is shown, at `scale` pixels per point, transparent behind the controls.
+  func bitmap() -> NSBitmapImageRep? {
     let width = Int(host.bounds.width) * Self.scale
     let height = Int(host.bounds.height) * Self.scale
     guard let bitmap = NSBitmapImageRep(
@@ -126,35 +135,32 @@ final class PopoverCanvas {
     bitmap.size = host.bounds.size
     host.display()
     host.cacheDisplay(in: host.bounds, to: bitmap)
-    return bitmap.retagging(with: .sRGB)?.representation(using: .png, properties: [:])
+    return bitmap.retagging(with: .sRGB)
   }
 
-  /// A control of the popover, by its AppKit class.
-  private func control<T: NSView>(_ type: T.Type, in view: NSView? = nil) -> T? {
-    for sub in (view ?? host).subviews {
-      if let found = sub as? T { return found }
-      if let found = control(type, in: sub) { return found }
+  /// The slider's frame, as the view reports it.
+  func slider() -> CGRect? {
+    parts.frames[.slider]
+  }
+
+  /// Where the slider's fill ends in a picture, in points: its last bright pixel along the slider's middle, from
+  /// the slider's start. Measured, because the fill does not run over the slider's whole frame. Nil without fill.
+  func fillEnd(in bitmap: NSBitmapImageRep) -> Double? {
+    guard let frame = slider() else { return nil }
+    let scale = Double(Self.scale)
+    let y = Int(frame.midY * scale)
+    var x = Int(frame.minX * scale)
+    var last: Int?
+    while x < Int(frame.maxX * scale), let pixel = bitmap.colorAt(x: x, y: y), pixel.alphaComponent > 0.5, pixel.brightnessComponent > 0.8 {
+      last = x
+      x += 1
     }
-    return nil
-  }
-
-  /// A rectangle of a subview, in points from the popover's top-left corner.
-  private func topLeft(_ rect: NSRect, of view: NSView) -> CGRect {
-    let r = view.convert(rect, to: host)
-    return host.isFlipped ? r : CGRect(x: r.minX, y: host.bounds.height - r.maxY, width: r.width, height: r.height)
-  }
-
-  /// The slider's knob and bar.
-  func slider() -> (knob: CGRect, bar: CGRect)? {
-    guard let slider = control(NSSlider.self), let cell = slider.cell as? NSSliderCell else { return nil }
-    let flipped = slider.isFlipped
-    return (topLeft(cell.knobRect(flipped: flipped), of: slider), topLeft(cell.barRect(flipped: flipped), of: slider))
+    return last.map { Double($0 + 1) / scale }
   }
 
   /// The Boost switch.
   func boostSwitch() -> CGRect? {
-    guard let toggle = control(NSSwitch.self) else { return nil }
-    return topLeft(toggle.bounds, of: toggle)
+    parts.frames[.boostSwitch]
   }
 }
 
@@ -170,37 +176,45 @@ func capturePopover(to dir: String, levels: [Int]?) -> Int32 {
     return 1
   }
 
-  func write(_ name: String) -> Bool {
-    guard let data = canvas.png() else { return false }
-    return (try? data.write(to: folder.appendingPathComponent(name))) != nil
+  // The slider's travel: where its fill ends one and nine x1.1 steps in, measured, then extended to both ends
+  // (the fill grows in a straight line with the position, except right at the ends, where it is held in).
+  func measure(at position: Double) -> (position: Double, x: Double)? {
+    canvas.show(SliderScale.level(at: position))
+    guard let bitmap = canvas.bitmap(), let x = canvas.fillEnd(in: bitmap) else { return nil }
+    return (SliderScale.position(of: canvas.model.shownLevel), x)
   }
-  func knob() -> Point? { canvas.slider().map { Box($0.knob).center } }
-
-  // The slider's travel: where the knob's centre is at either end.
-  canvas.show(SliderScale.level(at: SliderScale.end))
-  guard let atEnd = knob() else { print("no slider found in the popover"); return 1 }
-  canvas.show(Level.min)
-  guard let atStart = knob(), let (knobRect, bar) = canvas.slider(), let toggle = canvas.boostSwitch() else {
+  guard let near = measure(at: 1), let far = measure(at: 9), let slider = canvas.slider(),
+        let toggle = canvas.boostSwitch() else {
     print("no slider or switch found in the popover")
     return 1
   }
+  let perStep = (far.x - near.x) / (far.position - near.position)
+  let start = near.x - perStep * near.position
 
+  /// Writes the picture shown, and says where the slider's fill ends in it (the start when there is none).
+  func write(_ name: String) -> Point? {
+    guard let bitmap = canvas.bitmap(), let data = bitmap.representation(using: .png, properties: [:]),
+          (try? data.write(to: folder.appendingPathComponent(name))) != nil else { return nil }
+    return Point(x: canvas.fillEnd(in: bitmap) ?? start, y: slider.midY)
+  }
+
+  canvas.show(Level.min)
   var frames: [Frame] = []
   if let levels {
     for level in levels {
       canvas.show(level)
       let name = "level-\(level).png"
-      guard write(name), let at = knob() else { print("cannot draw \(name)"); return 1 }
+      guard let at = write(name) else { print("cannot draw \(name)"); return 1 }
       frames.append(Frame(pos: SliderScale.position(of: level), level: canvas.model.shownLevel, file: "popover/\(name)", knob: at))
     }
   } else {
-    // Off, then the same picture for the pointer over the knob: the native slider has no hover look.
-    guard write("off.png"), write("hover.png") else { print("cannot draw the popover"); return 1 }
+    // Off, then the same picture for the pointer over the slider: the native slider has no hover look.
+    guard write("off.png") != nil, write("hover.png") != nil else { print("cannot draw the popover"); return 1 }
     for i in 0...94 {
       let pos = Double(i) / 10
       canvas.show(SliderScale.level(at: pos))
       let name = String(format: "%03d.png", i)
-      guard write(name), let at = knob() else { print("cannot draw \(name)"); return 1 }
+      guard let at = write(name) else { print("cannot draw \(name)"); return 1 }
       frames.append(Frame(pos: pos, level: canvas.model.shownLevel, file: "popover/\(name)", knob: at))
     }
   }
@@ -208,9 +222,9 @@ func capturePopover(to dir: String, levels: [Int]?) -> Int32 {
 
   let manifest = Manifest(
     size: [canvas.size.width, canvas.size.height],
-    track: Box(CGRect(x: atStart.x, y: bar.minY, width: atEnd.x - atStart.x, height: bar.height)),
+    track: Box(CGRect(x: start, y: slider.minY, width: perStep * SliderScale.end, height: slider.height)),
     end: SliderScale.end,
-    thumb: .init(y: Box(knobRect).center.y, size: knobRect.width),
+    thumb: .init(y: slider.midY),
     switch: Box(toggle).center,
     frames: frames
   )
