@@ -1,12 +1,14 @@
 #!/bin/sh
-# Builds Sunny.app from the Swift package, and the Mac App Store installer.
+# Builds Sunny.app from the Swift package, the downloads of a GitHub release, and the Mac App Store installer.
 #
 #   scripts/build.sh dev    build/dev/Sunny.app: Apple silicon, signed ad hoc, sandboxed; runs on this Mac
+#   scripts/build.sh dist   build/dist/Sunny.app, Sunny-arm64.dmg and Sunny-arm64.zip: Apple silicon, signed ad hoc,
+#                           not sandboxed, not notarised; what a release hands out (and the Homebrew cask installs)
 #   scripts/build.sh mas    build/mas/Sunny.app and build/mas/Sunny-<version>.pkg: universal, signed for the store
 #
 # Environment:
 #   SUNNY_VERSION       CFBundleShortVersionString (default 0.3.0)
-#   SUNNY_BUILD         CFBundleVersion, which has to grow with each upload (default 1)
+#   SUNNY_BUILD         CFBundleVersion, which has to grow with each store upload (default 1; dist: the version)
 #   SUNNY_MAS_PROFILE   the provisioning profile to embed (default .signing/sunny-mas.provisionprofile of the main checkout)
 #   SUNNY_MAS_IDENTITY  the app's signing identity (default: the "Apple Distribution" one in the keychain)
 #   SUNNY_PKG_IDENTITY  the installer's (default: the "3rd Party Mac Developer Installer" one)
@@ -15,15 +17,15 @@ set -eu
 
 mode=${1:-dev}
 case "$mode" in
-  dev | mas) ;;
-  *) echo "usage: $0 dev|mas" >&2; exit 2 ;;
+  dev | dist | mas) ;;
+  *) echo "usage: $0 dev|dist|mas" >&2; exit 2 ;;
 esac
 
 here=$(cd "$(dirname "$0")/.." && pwd)
 # The main checkout, also from a git worktree: .signing/ (not committed) lives there.
 repo=$(cd "$(git -C "$here" rev-parse --path-format=absolute --git-common-dir)/.." && pwd)
 version=${SUNNY_VERSION:-0.3.0}
-build=${SUNNY_BUILD:-1}
+if [ "$mode" = dist ]; then build=${SUNNY_BUILD:-$version}; else build=${SUNNY_BUILD:-1}; fi
 out="$here/build/$mode"
 app="$out/Sunny.app"
 
@@ -31,7 +33,7 @@ if [ -z "${DEVELOPER_DIR:-}" ] && [ -d /Applications/Xcode.app/Contents/Develope
   export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 fi
 
-# The store build is universal; the development one is for this Mac only, which is quicker.
+# The store build is universal; the others are for Apple silicon only, like the Homebrew cask.
 if [ "$mode" = mas ]; then
   set -- -c release --arch arm64 --arch x86_64
 else
@@ -129,11 +131,33 @@ if [ "$mode" = dev ]; then
   exit 0
 fi
 
+if [ "$mode" = dist ]; then
+  # Signed ad hoc and not sandboxed, as the downloads always were: an ad hoc signature changes with every
+  # build, and a sandboxed app whose signature changed has to ask for its own container after each update.
+  # Without an Apple Developer ID there is no notarisation: the README and the cask deal with Gatekeeper.
+  xattr -cr "$app"
+  codesign --force --sign - "$app"
+  codesign --verify --strict "$app"
+  # The names stay the same from one version to the next: the site links to .../releases/latest/download/Sunny-arm64.dmg.
+  dmg="$out/Sunny-arm64.dmg"
+  zip="$out/Sunny-arm64.zip"
+  stage="$out/dmg"
+  mkdir -p "$stage"
+  ditto "$app" "$stage/Sunny.app"
+  ln -s /Applications "$stage/Applications"
+  hdiutil create -quiet -volname Sunny -srcfolder "$stage" -fs HFS+ -format UDZO -ov "$dmg"
+  rm -rf "$stage"
+  hdiutil verify -quiet "$dmg"
+  ditto -c -k --sequesterRsrc --keepParent "$app" "$zip"
+  echo "made ${app#"$here"/}, ${dmg#"$here"/} ($(du -h "$dmg" | cut -f1 | tr -d ' ')) and ${zip#"$here"/} ($(du -h "$zip" | cut -f1 | tr -d ' ')), signed ad hoc"
+  exit 0
+fi
+
 profile=${SUNNY_MAS_PROFILE:-$repo/.signing/sunny-mas.provisionprofile}
 [ -f "$profile" ] || { echo "no provisioning profile at $profile (set SUNNY_MAS_PROFILE)" >&2; exit 1; }
 cp -X "$profile" "$app/Contents/embedded.provisionprofile"
 # As few extended attributes as possible: the installer carries them as AppleDouble ._ files. Only
-# com.apple.provenance, which the system sets again, stays (the Electron build's installer had it too).
+# com.apple.provenance, which the system sets again, stays.
 xattr -cr "$app"
 codesign --force --sign "${SUNNY_MAS_IDENTITY:-Apple Distribution}" --entitlements "$here/entitlements/mas.plist" "$app"
 codesign --verify --strict "$app"
