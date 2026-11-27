@@ -2,6 +2,8 @@
 // gamma table back after each step. Each boost lasts about a second, and the gamma is always restored.
 //   swift run boost-check          the sequence below; ends with 0 when every step holds
 //   swift run boost-check hold 200 the level 200 until killed (to check what a crash leaves behind)
+//   swift run boost-check render . the popover and the menu bar item, drawn offscreen (no boost)
+//   swift run boost-check popover  the popover's pictures for the reel and the screenshots (Capture.swift)
 import AppKit
 import CoreGraphics
 import SunnyCore
@@ -47,21 +49,34 @@ func render<V: View>(_ view: V, to path: String, dark: Bool) {
 @MainActor
 func run() async -> Int32 {
   let arguments = CommandLine.arguments.dropFirst()
-  let model = SunnyModel()
 
   if arguments.first == "render" {
-    // The popover off, then on at 150% (a boost of about a second), in light and dark.
+    // The popover off, then on at 150%, in light and dark: a preview model, the display is left alone.
     let dir = arguments.dropFirst().first ?? "."
-    await settle(1)
-    render(PopoverView(model: model), to: "\(dir)/popover-off.png", dark: false)
-    model.set(150)
-    await settle(0.5)
-    render(PopoverView(model: model), to: "\(dir)/popover-on.png", dark: false)
-    render(PopoverView(model: model), to: "\(dir)/popover-on-dark.png", dark: true)
-    render(MenuBarLabel(model: model).padding(4), to: "\(dir)/menubar-on.png", dark: true)
-    model.restore()
+    let preview = SunnyModel(preview: Level.min)
+    render(PopoverView(model: preview), to: "\(dir)/popover-off.png", dark: false)
+    preview.set(150)
+    await settle(0.1)
+    render(PopoverView(model: preview), to: "\(dir)/popover-on.png", dark: false)
+    render(PopoverView(model: preview), to: "\(dir)/popover-on-dark.png", dark: true)
+    render(MenuBarLabel(model: preview).padding(4), to: "\(dir)/menubar-on.png", dark: true)
     return 0
   }
+
+  if arguments.first == "popover" {
+    let rest = Array(arguments.dropFirst())
+    guard let dir = rest.first, !dir.hasPrefix("--") else {
+      print("usage: boost-check popover <dir> [--levels 100,150,...]")
+      return 2
+    }
+    var levels: [Int]?
+    if let i = rest.firstIndex(of: "--levels"), i + 1 < rest.count {
+      levels = rest[i + 1].split(separator: ",").compactMap { Int($0) }
+    }
+    return capturePopover(to: dir, levels: levels)
+  }
+
+  let model = SunnyModel()
 
   if arguments.first == "hold" {
     model.set(Int(arguments.dropFirst().first ?? "") ?? 200)

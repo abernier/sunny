@@ -7,7 +7,8 @@ import SunnyCore
 public final class SunnyModel: ObservableObject {
   private static let lastBoostKey = "lastBoost"
 
-  private let engine = BoostEngine()
+  /// The boost; nil for a preview, which only shows a level.
+  private let engine: BoostEngine?
   private let defaults = UserDefaults.standard
 
   /// The requested level, 100...300.
@@ -21,9 +22,19 @@ public final class SunnyModel: ObservableObject {
   public private(set) var lastBoost: Int
 
   public init() {
+    engine = BoostEngine()
     let saved = defaults.integer(forKey: Self.lastBoostKey)
     lastBoost = Level.isBoost(saved) ? Level.clamp(Double(saved)) : Level.defaultBoost
     openAtLogin = Self.readOpenAtLogin()
+  }
+
+  /// A model that only shows: `set` changes the level and the switch, never the display, and nothing is saved.
+  /// For drawing the popover (boost-check's captures) without touching the screen's brightness.
+  public init(preview level: Int, openAtLogin: Bool? = false) {
+    engine = nil
+    lastBoost = Level.defaultBoost
+    self.openAtLogin = openAtLogin
+    set(level)
   }
 
   /// Whether the boost is on, as the switch shows it.
@@ -35,6 +46,11 @@ public final class SunnyModel: ObservableObject {
   public func set(_ value: Int) {
     let next = Level.clamp(Double(value))
     level = next
+    guard let engine else {
+      running = Level.isBoost(next)
+      if running { lastBoost = next }
+      return
+    }
     engine.level = next
     if Level.isBoost(next) {
       if lastBoost != next {
@@ -59,6 +75,7 @@ public final class SunnyModel: ObservableObject {
   }
 
   public func setOpenAtLogin(_ on: Bool) {
+    guard engine != nil else { openAtLogin = on; return }
     do {
       if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
     } catch {
@@ -69,7 +86,7 @@ public final class SunnyModel: ObservableObject {
 
   /// Back to normal brightness, before the app ends however it ends.
   public func restore() {
-    if engine.isRunning { engine.stop() }
+    if let engine, engine.isRunning { engine.stop() }
     running = false
   }
 
