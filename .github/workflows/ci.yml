@@ -1,0 +1,43 @@
+# Tests and builds the native app (native/) on every pull request and on main: the same commands as a local
+# check, `swift test` then `scripts/build.sh dist`. Publishes nothing; releases come from a tag (release.yml).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: native
+    steps:
+      - uses: actions/checkout@v4
+
+      # A released Xcode, never a beta, as in release.yml. build.sh reads DEVELOPER_DIR.
+      - name: Select the latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Point DEVELOPER_DIR at it
+        run: |
+          echo "DEVELOPER_DIR=$(xcode-select -p)" >> "$GITHUB_ENV"
+          xcodebuild -version
+          swift --version
+
+      - name: Test
+        run: swift test
+
+      - name: Build
+        run: |
+          scripts/build.sh dist
+          test -x build/dist/Sunny.app/Contents/MacOS/Sunny
+          test -f build/dist/Sunny-arm64.dmg
