@@ -5,6 +5,7 @@
 //                                                          000.png...094.png (slider positions 0 to 9.4 in x1.1
 //                                                          steps, 100% to 245%), and <dir>/popover.json
 //   swift run boost-check popover <dir> --levels 100,200   <dir>/popover/level-100.png, level-200.png, ...
+//   swift run boost-check --lang fr popover ...            the same, in French
 //
 // Pictures are dark (the menu bar's appearance over the reel's and the screenshots' skies), transparent where
 // the popover's material would be (the scripts draw their own), at three pixels per point.
@@ -96,6 +97,7 @@ final class PopoverCanvas {
         .onPreferenceChange(PopoverPart.Frames.self) { frames in MainActor.assumeIsolated { parts.frames = frames } }
         .environment(\.colorScheme, .dark)
         .environment(\.controlActiveState, .key)
+        .environment(\.locale, Locale(identifier: language))
     ))
     host.appearance = NSAppearance(named: .darkAqua)
     window = KeyLookingWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: false)

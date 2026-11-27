@@ -1,4 +1,4 @@
-// What the menu bar and the popover show and do: the level, whether the boost runs, open at login, quit.
+// What the menu bar, the popover and Settings show and do: the level, whether the boost runs, open at login, quit.
 import AppKit
 import ServiceManagement
 import SunnyCore
@@ -16,10 +16,9 @@ public final class SunnyModel: ObservableObject {
   /// Whether the boost runs.
   @Published public private(set) var running = false
   /// The level the menu bar shows beside the icon, nil while off. While the popover is open it never appears or
-  /// disappears: the menu bar item would change width, and the system closes the popover of an item that does. It
-  /// catches up when the popover closes.
+  /// disappears: the menu bar item would change width under the popover. It catches up when the popover closes.
   @Published public private(set) var menuBarLevel: Int?
-  /// Whether the popover is open, as PopoverView reports it.
+  /// Whether the popover is open, as the status item reports it.
   public var isPopoverOpen = false {
     didSet { updateMenuBarLevel() }
   }
@@ -29,6 +28,10 @@ public final class SunnyModel: ObservableObject {
   /// The level the switch turns back on to, kept across launches.
   public private(set) var lastBoost: Int
 
+  /// Called when the user turns the boost on (from off), by any means but the battery setting: the rating prompt
+  /// counts these.
+  public var onBoostTurnedOn: (() -> Void)?
+
   public init() {
     engine = BoostEngine()
     let saved = defaults.integer(forKey: Self.lastBoostKey)
@@ -37,12 +40,12 @@ public final class SunnyModel: ObservableObject {
   }
 
   /// A model that only shows: `set` changes the level and the switch, never the display, and nothing is saved.
-  /// For drawing the popover (boost-check's captures) without touching the screen's brightness.
+  /// For drawing the popover and Settings (boost-check's captures) without touching the screen's brightness.
   public init(preview level: Int, openAtLogin: Bool? = false) {
     engine = nil
     lastBoost = Level.defaultBoost
     self.openAtLogin = openAtLogin
-    set(level)
+    apply(level)
   }
 
   /// Whether the boost is on, as the switch shows it.
@@ -52,25 +55,9 @@ public final class SunnyModel: ObservableObject {
 
   /// Sets the level (clamped to 100...300); 100 stops the boost, more starts it if it is not running.
   public func set(_ value: Int) {
-    let next = Level.clamp(Double(value))
-    level = next
-    defer { updateMenuBarLevel() }
-    guard let engine else {
-      running = Level.isBoost(next)
-      if running { lastBoost = next }
-      return
-    }
-    engine.level = next
-    if Level.isBoost(next) {
-      if lastBoost != next {
-        lastBoost = next
-        defaults.set(next, forKey: Self.lastBoostKey)
-      }
-      running = engine.start()
-    } else {
-      if engine.isRunning { engine.stop() }
-      running = false
-    }
+    let wasOn = isOn
+    apply(value)
+    if !wasOn && isOn { onBoostTurnedOn?() }
   }
 
   /// Moves the level by x1.1 steps: 1 is "+", -1 is "-". From off, it counts from 100.
@@ -81,6 +68,15 @@ public final class SunnyModel: ObservableObject {
   /// Turns the boost on (back to the last boosted level) or off.
   public func toggle(_ on: Bool) {
     set(on ? lastBoost : Level.min)
+  }
+
+  /// The battery setting stops the boost, or turns it back on to the level it stopped: not the user's doing.
+  public func applyBatteryAction(_ action: BatteryPolicy.Action) {
+    switch action {
+    case .none: break
+    case .stop: apply(Level.min)
+    case let .resume(level): apply(level)
+    }
   }
 
   public func setOpenAtLogin(_ on: Bool) {
@@ -103,6 +99,28 @@ public final class SunnyModel: ObservableObject {
   public func quit() {
     restore()
     NSApp.terminate(nil)
+  }
+
+  private func apply(_ value: Int) {
+    let next = Level.clamp(Double(value))
+    level = next
+    defer { updateMenuBarLevel() }
+    guard let engine else {
+      running = Level.isBoost(next)
+      if running { lastBoost = next }
+      return
+    }
+    engine.level = next
+    if Level.isBoost(next) {
+      if lastBoost != next {
+        lastBoost = next
+        defaults.set(next, forKey: Self.lastBoostKey)
+      }
+      running = engine.start()
+    } else {
+      if engine.isRunning { engine.stop() }
+      running = false
+    }
   }
 
   private func updateMenuBarLevel() {

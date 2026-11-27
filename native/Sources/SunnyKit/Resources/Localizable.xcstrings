@@ -1,0 +1,528 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "About Sunny": {
+      "comment": "Menu item: opens the About panel",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About Sunny"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À propos de Sunny"
+          }
+        }
+      }
+    },
+    "Battery": {
+      "comment": "Settings tab",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batterie"
+          }
+        }
+      }
+    },
+    "Beside the icon, while the boost is on.": {
+      "comment": "Settings: under Show percentage",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beside the icon, while the boost is on."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À côté de l’icône, quand le boost est activé."
+          }
+        }
+      }
+    },
+    "Boost": {
+      "comment": "The label of the switch that turns the boost on and off",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boost"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boost"
+          }
+        }
+      }
+    },
+    "Brighter (multiply by 1.1)": {
+      "comment": "VoiceOver label of the + button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brighter (multiply by 1.1)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus lumineux (multiplier par 1,1)"
+          }
+        }
+      }
+    },
+    "Brightness": {
+      "comment": "VoiceOver label of the slider",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brightness"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luminosité"
+          }
+        }
+      }
+    },
+    "Dimmer (divide by 1.1)": {
+      "comment": "VoiceOver label of the - button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimmer (divide by 1.1)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moins lumineux (diviser par 1,1)"
+          }
+        }
+      }
+    },
+    "General": {
+      "comment": "Settings tab",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Général"
+          }
+        }
+      }
+    },
+    "Icon": {
+      "comment": "Settings: the menu bar icon picker",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icon"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icône"
+          }
+        }
+      }
+    },
+    "It turns back on when the Mac is plugged in again.": {
+      "comment": "Settings: under Turn off boost on battery",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It turns back on when the Mac is plugged in again."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il se réactive quand le Mac est de nouveau branché."
+          }
+        }
+      }
+    },
+    "Light": {
+      "comment": "The light.max icon, in the Icon picker",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumière"
+          }
+        }
+      }
+    },
+    "Open at login": {
+      "comment": "Settings: start Sunny when the user logs in",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open at login"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir à l’ouverture de session"
+          }
+        }
+      }
+    },
+    "Quit Sunny": {
+      "comment": "Menu item: quits the app",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Sunny"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitter Sunny"
+          }
+        }
+      }
+    },
+    "Rate on the App Store…": {
+      "comment": "Menu item: opens the App Store to write a review",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate on the App Store…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noter sur l’App Store…"
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "comment": "Menu item: opens the Settings window",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglages…"
+          }
+        }
+      }
+    },
+    "Shortcut": {
+      "comment": "Settings tab",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raccourci"
+          }
+        }
+      }
+    },
+    "Show percentage": {
+      "comment": "Settings: show the level beside the menu bar icon",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show percentage"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le pourcentage"
+          }
+        }
+      }
+    },
+    "Small sun": {
+      "comment": "The sun.min icon, in the Icon picker",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small sun"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petit soleil"
+          }
+        }
+      }
+    },
+    "Sun": {
+      "comment": "The sun.max icon, in the Icon picker",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sun"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soleil"
+          }
+        }
+      }
+    },
+    "Sunny": {
+      "comment": "The app's own sun icon, in the Icon picker",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunny"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunny"
+          }
+        }
+      }
+    },
+    "Sunny on the App Store": {
+      "comment": "A link in the About panel",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunny on the App Store"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunny sur l’App Store"
+          }
+        }
+      }
+    },
+    "Sunny: %lld%%": {
+      "comment": "The icon's tooltip while boosted",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunny: %lld%%"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunny : %lld %%"
+          }
+        }
+      }
+    },
+    "Sunny: off": {
+      "comment": "The icon's tooltip while not boosted",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunny: off"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunny : désactivé"
+          }
+        }
+      }
+    },
+    "Sunrise": {
+      "comment": "The sun.horizon icon, in the Icon picker",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunrise"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lever de soleil"
+          }
+        }
+      }
+    },
+    "Turn boost on or off": {
+      "comment": "Settings: the global shortcut's recorder",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn boost on or off"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activer ou désactiver le boost"
+          }
+        }
+      }
+    },
+    "Turn off boost on battery": {
+      "comment": "Settings: the battery setting",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off boost on battery"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Désactiver le boost sur batterie"
+          }
+        }
+      }
+    },
+    "Version %@": {
+      "comment": "In the About panel",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        }
+      }
+    },
+    "When the charge is below %lld%%": {
+      "comment": "Settings: the battery threshold",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the charge is below %lld%%"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quand la charge est inférieure à %lld %%"
+          }
+        }
+      }
+    },
+    "Works from any app.": {
+      "comment": "Settings: under the shortcut recorder",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Works from any app."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fonctionne depuis n’importe quelle app."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

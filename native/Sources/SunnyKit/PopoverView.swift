@@ -1,4 +1,5 @@
-// The popover under the menu bar icon: the switch, the level with "-" and "+", the slider, open at login, quit.
+// The popover under the menu bar icon: the switch, the level with "-" and "+", and the slider. The rest (Settings,
+// About, Quit) is in the icon's right-click menu.
 import AppKit
 import SunnyCore
 import SwiftUI
@@ -13,34 +14,36 @@ public struct PopoverView: View {
   public var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack {
-        Text("Sunny").font(.system(size: 13, weight: .semibold))
+        Text(verbatim: "Sunny").font(.system(size: 13, weight: .semibold))
         Spacer()
-        Text("Boost")
+        Text("Boost", bundle: .module, comment: "The label of the switch that turns the boost on and off")
           .foregroundStyle(.secondary)
           .accessibilityHidden(true) // the switch says it
-        Toggle("Boost", isOn: Binding(get: { model.isOn }, set: { model.toggle($0) }))
-          .toggleStyle(.switch)
-          .controlSize(.small)
-          .tint(.orange)
-          .labelsHidden()
-          .popoverPart(.boostSwitch)
+        Toggle(isOn: Binding(get: { model.isOn }, set: { model.toggle($0) })) {
+          Text("Boost", bundle: .module)
+        }
+        .toggleStyle(.switch)
+        .controlSize(.small)
+        .tint(.orange)
+        .labelsHidden()
+        .popoverPart(.boostSwitch)
       }
 
       HStack {
-        Button("−") { model.step(-1) }
+        Button { model.step(-1) } label: { Text(verbatim: "−") }
           .buttonStyle(RoundButtonStyle())
           .disabled(model.shownLevel <= Level.min)
-          .accessibilityLabel("Dimmer (divide by 1.1)")
+          .accessibilityLabel(Text("Dimmer (divide by 1.1)", bundle: .module, comment: "VoiceOver label of the - button"))
         Spacer()
-        (Text("\(model.shownLevel)").font(.system(size: 36, weight: .semibold))
-          + Text("%").font(.system(size: 20)).foregroundColor(.secondary))
+        (Text(verbatim: "\(model.shownLevel)").font(.system(size: 36, weight: .semibold))
+          + Text(verbatim: "%").font(.system(size: 20)).foregroundColor(.secondary))
           .monospacedDigit()
-          .accessibilityLabel("\(model.shownLevel)%")
+          .accessibilityLabel(Text(verbatim: "\(model.shownLevel)%"))
         Spacer()
-        Button("+") { model.step(1) }
+        Button { model.step(1) } label: { Text(verbatim: "+") }
           .buttonStyle(RoundButtonStyle())
           .disabled(model.shownLevel >= Level.max)
-          .accessibilityLabel("Brighter (multiply by 1.1)")
+          .accessibilityLabel(Text("Brighter (multiply by 1.1)", bundle: .module, comment: "VoiceOver label of the + button"))
       }
 
       // The Control Center look: a small sun, a thin track that fills from the left with no knob, a big sun.
@@ -56,36 +59,21 @@ public struct PopoverView: View {
             }
           ),
           in: 0...SliderScale.end,
-          label: { Text("Brightness") },
+          label: { Text("Brightness", bundle: .module, comment: "VoiceOver label of the slider") },
           onEditingChanged: { editing in if !editing { dragged = nil } }
         )
         .labelsHidden()
         .knobless()
         .tint(.primary)
-        .accessibilityValue("\(model.shownLevel)%")
+        .accessibilityValue(Text(verbatim: "\(model.shownLevel)%"))
         .popoverPart(.slider)
         Image(systemName: "sun.max").font(.system(size: 16)).accessibilityHidden(true)
       }
       .foregroundStyle(.secondary)
-
-      Divider()
-
-      HStack {
-        if let atLogin = model.openAtLogin {
-          Toggle("Open at login", isOn: Binding(get: { atLogin }, set: { model.setOpenAtLogin($0) }))
-            .toggleStyle(.switch)
-            .controlSize(.mini)
-        }
-        Spacer()
-        Button("Quit") { model.quit() }
-          .buttonStyle(.borderless)
-      }
-      .font(.system(size: 12))
-      .foregroundStyle(.secondary)
     }
     .padding(.horizontal, 16)
     .padding(.top, 12)
-    .padding(.bottom, 10)
+    .padding(.bottom, 14)
     .frame(width: 300)
     .coordinateSpace(name: PopoverPart.space)
   }
@@ -103,31 +91,6 @@ private struct RoundButtonStyle: ButtonStyle {
       .contentShape(Circle())
       .opacity(isEnabled ? 1 : 0.4)
   }
-}
-
-/// The menu bar icon, with the level beside it while boosted.
-public struct MenuBarLabel: View {
-  @ObservedObject var model: SunnyModel
-
-  public init(model: SunnyModel) { self.model = model }
-
-  public var body: some View {
-    HStack(spacing: 4) {
-      Image(nsImage: Self.icon)
-      if let level = model.menuBarLevel {
-        Text("\(level)%").monospacedDigit()
-      }
-    }
-  }
-
-  /// The sun the app carries (a template image, drawn in the menu bar's color), or a system one without a bundle.
-  static let icon: NSImage = {
-    let image = Bundle.main.image(forResource: "MenuBarIconTemplate")
-      ?? NSImage(systemSymbolName: "sun.max", accessibilityDescription: "Sunny")
-      ?? NSImage()
-    image.isTemplate = true
-    return image
-  }()
 }
 
 extension View {
