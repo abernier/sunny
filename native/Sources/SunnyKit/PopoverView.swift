@@ -114,8 +114,8 @@ public struct MenuBarLabel: View {
   public var body: some View {
     HStack(spacing: 4) {
       Image(nsImage: Self.icon)
-      if model.isOn {
-        Text("\(model.level)%")
+      if let level = model.menuBarLevel {
+        Text("\(level)%").monospacedDigit()
       }
     }
   }

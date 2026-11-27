@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     restoreOnSignals()
     monitors = [keyMonitor(), rightClickMonitor()].compactMap { $0 }
+    followPopover()
     // The tooltip of the icon follows the state. SwiftUI creates the status item after launch.
     model.objectWillChange
       .receive(on: RunLoop.main)
@@ -40,6 +41,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationWillTerminate(_ notification: Notification) {
     // From Quit, at logout, or when the system asks: the boost never outlives the app.
     model.restore()
+  }
+
+  /// Tells the model whether the popover is open: it is the app's only window that takes the keyboard (the boost's
+  /// window never does), and it closes as soon as it stops being key.
+  private func followPopover() {
+    let center = NotificationCenter.default
+    for (name, open) in [(NSWindow.didBecomeKeyNotification, true), (NSWindow.didResignKeyNotification, false)] {
+      center.publisher(for: name)
+        .sink { [weak self] _ in self?.model.isPopoverOpen = open }
+        .store(in: &subscriptions)
+    }
   }
 
   /// SIGTERM, SIGINT and SIGHUP (`kill`, Ctrl-C in a terminal) restore the gamma before the app ends.

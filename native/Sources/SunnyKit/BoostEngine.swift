@@ -4,7 +4,7 @@
 //    "headroom" (values above 1.0).
 // 2. The display's gamma table is scaled by that headroom, so every pixel on screen uses the extra
 //    brightness, not just HDR content.
-// Stopping closes the window and restores the ColorSync gamma. The system also drops the gamma table when
+// Stopping hides the window and restores the ColorSync gamma. The system also drops the gamma table when
 // the process that set it ends, crash included.
 import AppKit
 import CoreGraphics
@@ -16,8 +16,9 @@ public final class BoostEngine {
   private static let tableSize: UInt32 = 256
 
   private let display = CGMainDisplayID()
-  private var window: NSWindow?
-  private var renderer: EDRRenderer?
+  /// The EDR window, made on the first start and kept: stopping only hides it (see EDRWindow).
+  private var window: EDRWindow?
+  private var running = false
   private var timer: Timer?
   private var original: GammaTable?
   private var applied: Float = 0
@@ -28,7 +29,7 @@ public final class BoostEngine {
     didSet { update() }
   }
 
-  public var isRunning: Bool { window != nil }
+  public var isRunning: Bool { running }
 
   public init() {}
 
@@ -36,34 +37,17 @@ public final class BoostEngine {
   @discardableResult
   public func start() -> Bool {
     if isRunning { return true }
-    guard let screen = mainScreen(), let device = MTLCreateSystemDefaultDevice(), let renderer = EDRRenderer(device: device) else {
+    guard let screen = mainScreen(), let window = window ?? makeWindow() else {
       log("no screen or Metal device: cannot boost")
       return false
     }
     original = readGamma()
 
-    let frame = NSRect(x: screen.frame.minX, y: screen.frame.minY, width: 1, height: 1)
-    let window = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
-    window.level = .screenSaver
-    window.isOpaque = false
-    window.backgroundColor = .clear
-    window.ignoresMouseEvents = true
-    window.hasShadow = false
-    window.isReleasedWhenClosed = false
-    window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
-
-    let view = MTKView(frame: NSRect(x: 0, y: 0, width: 1, height: 1), device: device)
-    view.colorPixelFormat = .rgba16Float
-    view.colorspace = CGColorSpace(name: CGColorSpace.extendedLinearDisplayP3)
-    (view.layer as? CAMetalLayer)?.wantsExtendedDynamicRangeContent = true
-    view.clearColor = MTLClearColor(red: 16, green: 16, blue: 16, alpha: 1)
-    view.preferredFramesPerSecond = 5
-    view.delegate = renderer
-    window.contentView = view
+    window.setFrameOrigin(screen.frame.origin)
+    window.view.isPaused = false
     window.orderFrontRegardless()
-
     self.window = window
-    self.renderer = renderer
+    running = true
     applied = 0
 
     // The headroom ramps up after EDR kicks in and drops when the panel gets hot: follow it.
@@ -98,10 +82,11 @@ public final class BoostEngine {
       NSWorkspace.shared.notificationCenter.removeObserver(observer)
     }
     observers = []
+    // Hidden, never closed: closing a window makes AppKit pick another key window, and the popover, which
+    // closes when it stops being key, would close under the pointer.
+    window?.view.isPaused = true
     window?.orderOut(nil)
-    window?.close()
-    window = nil
-    renderer = nil
+    running = false
     original = nil
     applied = 0
     CGDisplayRestoreColorSyncSettings()
@@ -116,6 +101,12 @@ public final class BoostEngine {
     writeGamma(original.scaled(by: factor))
     applied = factor
     log("headroom \(headroom), factor \(factor)")
+  }
+
+  /// The 1x1 window that shows EDR content, at the bottom-left corner of the screen.
+  private func makeWindow() -> EDRWindow? {
+    guard let device = MTLCreateSystemDefaultDevice(), let renderer = EDRRenderer(device: device) else { return nil }
+    return EDRWindow(device: device, renderer: renderer)
   }
 
   /// The screen of the main display, whose gamma table is the one scaled.
@@ -164,4 +155,37 @@ private final class EDRRenderer: NSObject, MTKViewDelegate {
     buffer.present(drawable)
     buffer.commit()
   }
+}
+
+/// The EDR window: a 1x1 point panel above everything, that never takes the keyboard or activates the app, so
+/// showing or hiding it leaves the popover's key window alone. Made once; the boost only shows and hides it.
+private final class EDRWindow: NSPanel {
+  let view: MTKView
+  private let renderer: EDRRenderer
+
+  init(device: MTLDevice, renderer: EDRRenderer) {
+    self.renderer = renderer
+    view = MTKView(frame: NSRect(x: 0, y: 0, width: 1, height: 1), device: device)
+    view.colorPixelFormat = .rgba16Float
+    view.colorspace = CGColorSpace(name: CGColorSpace.extendedLinearDisplayP3)
+    (view.layer as? CAMetalLayer)?.wantsExtendedDynamicRangeContent = true
+    view.clearColor = MTLClearColor(red: 16, green: 16, blue: 16, alpha: 1)
+    view.preferredFramesPerSecond = 5
+    view.isPaused = true
+    view.delegate = renderer
+
+    super.init(contentRect: NSRect(x: 0, y: 0, width: 1, height: 1), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+    level = .screenSaver
+    isOpaque = false
+    backgroundColor = .clear
+    ignoresMouseEvents = true
+    hasShadow = false
+    hidesOnDeactivate = false
+    isReleasedWhenClosed = false
+    collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
+    contentView = view
+  }
+
+  override var canBecomeKey: Bool { false }
+  override var canBecomeMain: Bool { false }
 }

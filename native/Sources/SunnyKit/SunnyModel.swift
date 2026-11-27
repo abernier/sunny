@@ -15,6 +15,14 @@ public final class SunnyModel: ObservableObject {
   @Published public private(set) var level = Level.min
   /// Whether the boost runs.
   @Published public private(set) var running = false
+  /// The level the menu bar shows beside the icon, nil while off. While the popover is open it never appears or
+  /// disappears: the menu bar item would change width, and the system closes the popover of an item that does. It
+  /// catches up when the popover closes.
+  @Published public private(set) var menuBarLevel: Int?
+  /// Whether the popover is open, as PopoverView reports it.
+  public var isPopoverOpen = false {
+    didSet { updateMenuBarLevel() }
+  }
   /// Whether the app opens at login; nil where that is not offered (not run from an app bundle).
   @Published public private(set) var openAtLogin: Bool?
 
@@ -46,6 +54,7 @@ public final class SunnyModel: ObservableObject {
   public func set(_ value: Int) {
     let next = Level.clamp(Double(value))
     level = next
+    defer { updateMenuBarLevel() }
     guard let engine else {
       running = Level.isBoost(next)
       if running { lastBoost = next }
@@ -88,11 +97,19 @@ public final class SunnyModel: ObservableObject {
   public func restore() {
     if let engine, engine.isRunning { engine.stop() }
     running = false
+    updateMenuBarLevel()
   }
 
   public func quit() {
     restore()
     NSApp.terminate(nil)
+  }
+
+  private func updateMenuBarLevel() {
+    let next = isOn ? level : nil
+    // With the popover open, only a level that replaces another: same width, the digits are monospaced.
+    if isPopoverOpen && (next == nil) != (menuBarLevel == nil) { return }
+    if menuBarLevel != next { menuBarLevel = next }
   }
 
   private static func readOpenAtLogin() -> Bool? {
