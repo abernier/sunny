@@ -110,8 +110,13 @@ final class PopoverCanvas {
 
   /// Shows a level and lays the view out for it.
   func show(_ level: Int) {
+    let wasOn = model.isOn
     model.set(level)
     layout()
+    // The Boost switch animates when it flips: let it settle, or the picture catches it halfway.
+    if model.isOn != wasOn {
+      RunLoop.main.run(until: Date().addingTimeInterval(0.6))
+    }
   }
 
   private func layout() {
