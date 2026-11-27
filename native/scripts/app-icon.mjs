@@ -1,7 +1,8 @@
-// Renders the app icon, assets/icon.svg, to assets/icon.png (1024x1024) and assets/icon.icns (16 to 1024, with @2x),
-// which the packed app carries. Both outputs are committed: this only has to run after icon.svg changes.
+// Renders the app icon, Resources/AppIcon.svg, to Resources/AppIcon.png (1024x1024) and Resources/AppIcon.icns
+// (16 to 1024, with @2x), which Sunny.app carries. Both outputs are committed: this only has to run after
+// AppIcon.svg changes.
 //   node scripts/app-icon.mjs              always render
-//   node scripts/app-icon.mjs --if-stale   only when an output is missing or older than icon.svg
+//   node scripts/app-icon.mjs --if-stale   only when an output is missing or older than AppIcon.svg
 //
 // No dependency: the SVG is rendered by `rsvg-convert` if it is on the PATH, otherwise by a headless Chrome
 // (SUNNY_CHROME, or the newest Chrome for Testing that Playwright or Puppeteer downloaded). `sips` scales the
@@ -12,11 +13,11 @@ import os from "node:os";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
-const svg = path.join(root, "assets", "icon.svg");
-const png = path.join(root, "assets", "icon.png");
-const icns = path.join(root, "assets", "icon.icns");
+const svg = path.join(root, "Resources", "AppIcon.svg");
+const png = path.join(root, "Resources", "AppIcon.png");
+const icns = path.join(root, "Resources", "AppIcon.icns");
 
-/** Whether icon.png or icon.icns is missing or older than icon.svg. */
+/** Whether AppIcon.png or AppIcon.icns is missing or older than AppIcon.svg. */
 export function isStale() {
 	const source = fs.statSync(svg).mtimeMs;
 	return [png, icns].some((file) => !fs.existsSync(file) || fs.statSync(file).mtimeMs < source);
@@ -89,7 +90,7 @@ export function renderSvg(input, output, size) {
 	if (!fs.existsSync(output)) throw new Error(`${chrome} did not write ${output}`);
 }
 
-/** Renders icon.png, then scales it into an iconset and packs icon.icns. */
+/** Renders AppIcon.png, then scales it into an iconset and packs AppIcon.icns. */
 export function renderAppIcon() {
 	renderSvg(svg, png, 1024);
 	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sunny-iconset-"));
@@ -111,5 +112,5 @@ export function renderAppIcon() {
 if (import.meta.filename === process.argv[1]) {
 	if (process.argv.includes("--if-stale") && !isStale()) process.exit(0);
 	renderAppIcon();
-	console.log("wrote assets/icon.png and assets/icon.icns");
+	console.log("wrote Resources/AppIcon.png and Resources/AppIcon.icns");
 }

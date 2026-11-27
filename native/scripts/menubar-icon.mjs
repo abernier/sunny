@@ -1,7 +1,7 @@
-// Draws the tray icon, a sun, as black on transparent PNGs that macOS uses as a template image:
-// assets/trayTemplate.png (18x18) and assets/trayTemplate@2x.png (36x36). No dependency: the shape is
+// Draws the menu bar icon, a sun, as black on transparent PNGs that macOS uses as a template image:
+// Resources/MenuBarIconTemplate.png (18x18) and Resources/MenuBarIconTemplate@2x.png (36x36). No dependency: the shape is
 // sampled with 4x4 supersampling and the PNG is encoded by hand.
-//   node scripts/icon.mjs
+//   node scripts/menubar-icon.mjs
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
@@ -68,7 +68,6 @@ function png(scale) {
 	return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", header), chunk("IDAT", zlib.deflateSync(Buffer.concat(rows))), chunk("IEND", Buffer.alloc(0))]);
 }
 
-fs.mkdirSync(path.join(root, "assets"), { recursive: true });
-fs.writeFileSync(path.join(root, "assets", "trayTemplate.png"), png(1));
-fs.writeFileSync(path.join(root, "assets", "trayTemplate@2x.png"), png(2));
-console.log("wrote assets/trayTemplate.png and assets/trayTemplate@2x.png");
+fs.writeFileSync(path.join(root, "Resources", "MenuBarIconTemplate.png"), png(1));
+fs.writeFileSync(path.join(root, "Resources", "MenuBarIconTemplate@2x.png"), png(2));
+console.log("wrote Resources/MenuBarIconTemplate.png and Resources/MenuBarIconTemplate@2x.png");

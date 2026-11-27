@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <!--
-    Sunny's app icon, the source of tray/assets/icon.icns and icon.png (scripts/app-icon.mjs).
+    Sunny's app icon, the source of AppIcon.icns and AppIcon.png beside it (../scripts/app-icon.mjs).
     Same motif as the site's favicon (site/public/favicon.svg), scaled from its 32 grid onto the plate
     (x 25.75, offset 100): a yellow-to-pink sun on a plum tile, cut by three horizontal bands
     (a mask, so no edge of a painted band can show against the plate).

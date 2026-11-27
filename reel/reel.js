@@ -372,6 +372,9 @@ function scene4(t) {
 /** Called once by render.mjs: the popover's captured states, then the measured tray. */
 window.setup = (pop) => {
 	POP = pop;
+	// The popover's own size, as boost-check drew it.
+	$("pop").style.width = `${pop.size[0]}px`;
+	$("pop").style.height = `${pop.size[1]}px`;
 	const holder = $("pop-frames");
 	for (const f of ["popover/off.png", "popover/hover.png", ...pop.frames.map((x) => x.file)]) {
 		const img = document.createElement("img");

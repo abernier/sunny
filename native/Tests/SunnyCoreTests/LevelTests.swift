@@ -1,4 +1,4 @@
-// Ported from tray/test/level.test.ts, plus the gamma side the Electron app left to the helper program.
+// The level scale, the slider mapping and the gamma factor and table.
 import SunnyCore
 import XCTest
 

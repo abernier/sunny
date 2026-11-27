@@ -27,7 +27,7 @@ const arg = (name) => { const i = process.argv.indexOf(`--${name}`); return i > 
 const run = (cmd, args) => new Promise((done, fail) => spawn(cmd, args, { stdio: ["ignore", "inherit", "inherit"] }).on("close", (code) => (code ? fail(new Error(`${cmd} ended with ${code}`)) : done())));
 
 const captures = path.join(reel, "captures");
-for (const f of ["popover.json", "icon.svg", "trayTemplate@2x.png", "bricolage.woff2"]) {
+for (const f of ["popover.json", "AppIcon.svg", "MenuBarIconTemplate@2x.png", "bricolage.woff2"]) {
 	if (!fs.existsSync(path.join(captures, f))) throw new Error(`reel/captures/${f} is missing: see reel/README.md`);
 }
 
@@ -36,7 +36,7 @@ const { page } = browser;
 page.on("pageerror", (e) => { console.error("page error:", e.message); process.exitCode = 1; });
 await page.goto(`file://${path.join(reel, "reel.html")}`);
 
-const plate = fs.readFileSync(path.join(captures, "icon.svg"), "utf8").match(/<path id="plate" d="([^"]+)"/)[1];
+const plate = fs.readFileSync(path.join(captures, "AppIcon.svg"), "utf8").match(/<path id="plate" d="([^"]+)"/)[1];
 const pop = JSON.parse(fs.readFileSync(path.join(captures, "popover.json"), "utf8"));
 await page.evaluate(async ([plate, pop, offset]) => {
 	document.getElementById("plate").setAttribute("d", plate);

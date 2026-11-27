@@ -8,10 +8,10 @@ The film is composited in code, but what it shows of the app and of the windows 
 
 | In the film | Where it comes from |
 | --- | --- |
-| The popover | the real renderer (`../tray/src`, React), served by Vite and dragged with the mouse in headless Chrome for Testing, one picture per tenth of a x1.1 step (100% to 245%), at 3 pixels per point |
-| The menu bar item | the real glyph, `../tray/assets/trayTemplate@2x.png`, and the percent title the app sets |
+| The popover | the app's own SwiftUI view (`../native/Sources/SunnyKit/PopoverView.swift`), drawn offscreen by `swift run boost-check popover` from a preview model that never touches the display, one picture per tenth of a x1.1 step of the slider (100% to 245%), at 3 pixels per point |
+| The menu bar item | the real glyph, `../native/Resources/MenuBarIconTemplate@2x.png`, and the percent title the app sets |
 | The DMG window | a capture of the Finder window of the released `Sunny-arm64.dmg` (v0.1.1); its own background image is laid over the hidden files the capturing Finder showed |
-| The drag image, the logo | `../tray/assets/icon.png` and `icon.svg` |
+| The drag image, the logo | `../native/Resources/AppIcon.png` and `AppIcon.svg` |
 | The browser | a capture of a Chrome for Testing window's toolbar, over a headless capture of the page (1440x800 at 2x, cookies refused) |
 | Drawn here | the wallpaper (an original gradient), a plain menu bar without logo or names, the popover's vibrancy, the cursor, the camera, and the brightness |
 
@@ -29,8 +29,9 @@ and adds a bloom of what is near white (`reel.js`, `exposure`).
 
 ## Rendering
 
-Node 24, pnpm, ffmpeg, and Chrome for Testing (found in Playwright's or Puppeteer's cache, or
-`SUNNY_REEL_CHROME`). `../tray` and `../site` need their `node_modules` (`pnpm install` in each).
+Node 24, pnpm, ffmpeg, Swift (the Xcode command line tools, for the popover), and Chrome for Testing (found in
+Playwright's or Puppeteer's cache, or `SUNNY_REEL_CHROME`). `../site` needs its `node_modules` (`pnpm install`
+there), for the wordmark's typeface.
 
 ```sh
 pnpm --dir reel install

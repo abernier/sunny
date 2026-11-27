@@ -21,10 +21,12 @@ Sources/SunnyKit/     BoostEngine (EDR window + gamma), SunnyModel, the popover 
 Sources/Sunny/        the app: MenuBarExtra, signals, keys, right-click menu, tooltip
 Sources/boost-check/  checks the boost on this Mac's display, and draws the popover offscreen
 Tests/SunnyCoreTests/ swift test
-Resources/            AppIcon.icns and the menu bar template images (copies of ../tray/assets)
+Resources/            AppIcon.svg and its renders AppIcon.png and AppIcon.icns; the menu bar template images
 entitlements/         dev.plist (sandbox) and mas.plist (sandbox + app and team identifiers)
-scripts/build.sh      assembles Sunny.app; signs it; makes the store installer
+scripts/build.sh      assembles Sunny.app; signs it; makes the release downloads and the store installer
 scripts/gamma.swift   prints the display's gamma table in short
+scripts/app-icon.mjs  renders Resources/AppIcon.svg to AppIcon.png and AppIcon.icns (Node, no dependency)
+scripts/menubar-icon.mjs  draws Resources/MenuBarIconTemplate.png and @2x (Node, no dependency)
 ```
 
 ## Build
@@ -35,12 +37,20 @@ Xcode command line tools; the store build wants a released Xcode (`/Applications
 ```sh
 swift test                      # unit tests
 swift run boost-check           # boosts for a few seconds, reads the gamma back, restores it
-swift run boost-check render .  # popover-*.png and menubar-on.png, drawn offscreen
+swift run boost-check render .  # popover-*.png and menubar-on.png, drawn offscreen (no boost)
+swift run boost-check popover d # the popover's pictures and popover.json for ../reel and ../appstore (no boost)
 scripts/build.sh dev            # build/dev/Sunny.app: arm64, ad hoc, sandboxed
+scripts/build.sh dist           # build/dist/Sunny-arm64.dmg and .zip: arm64, ad hoc, not sandboxed (the releases)
 scripts/build.sh mas            # build/mas/Sunny.app and Sunny-<version>.pkg: universal, for the Mac App Store
 ```
 
 Run the development app with `build/dev/Sunny.app/Contents/MacOS/Sunny` to see its log on the terminal.
+
+`scripts/build.sh dist` is what `.github/workflows/release.yml` runs for a `v*` tag, with `SUNNY_VERSION` from the
+tag. The downloads keep their names across versions (the site links to the latest `Sunny-arm64.dmg`), and are
+signed ad hoc, not notarised: there is no Developer ID. They are not sandboxed either, because an ad hoc
+signature changes with every build, and a sandboxed app whose signature changed has to ask for its container
+again after each update.
 
 `scripts/build.sh mas` signs with the "Apple Distribution" identity and the installer with "3rd Party Mac
 Developer Installer" (`SUNNY_MAS_IDENTITY` and `SUNNY_PKG_IDENTITY` to choose), and embeds `SUNNY_MAS_PROFILE`,
