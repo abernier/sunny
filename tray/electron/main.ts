@@ -3,7 +3,7 @@
 import { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, Tray } from "electron";
 import path from "node:path";
 import { DEFAULT_BOOST, isBoost, MIN_LEVEL, stepLevel, throttle } from "../src/level.ts";
-import { BOOST_BIN, type BoostState, readLevel, readState, setLevel, watchState } from "./boost.ts";
+import { BOOST_BIN, type BoostState, IS_MAS, readLevel, readState, setLevel, stopOwnBoost, watchState } from "./boost.ts";
 
 const HERE = import.meta.dirname;
 const ROOT = path.resolve(HERE, "..");
@@ -112,6 +112,7 @@ function trayIcon(): Electron.NativeImage {
 
 function quit(): void {
 	// The boost is left as it is: it outlives the app on purpose, like when it is started from the shell.
+	// Except in the Mac App Store build, whose boost is its own child and ends with it (will-quit, below).
 	apply.flush();
 	app.quit();
 }
@@ -139,7 +140,7 @@ app.whenReady().then(async () => {
 	tray = new Tray(trayIcon());
 	tray.setIgnoreDoubleClickEvents(true);
 	// Its place is known once the menu bar has laid it out.
-	console.log(`[sunny] boost program ${BOOST_BIN}`);
+	console.log(`[sunny] boost program ${BOOST_BIN}${IS_MAS ? " (Mac App Store build)" : ""}`);
 	setTimeout(() => console.log(`[sunny] tray icon at ${JSON.stringify(tray?.getBounds())}`), 1000);
 	tray.on("click", togglePopover);
 	tray.on("right-click", () => tray!.popUpContextMenu(Menu.buildFromTemplate([{ label: "Quit Sunny", click: quit }])));
@@ -148,6 +149,9 @@ app.whenReady().then(async () => {
 	// Loaded ahead, so that the first click opens it at once.
 	popover = createPopover();
 });
+
+// The Mac App Store build ends its boost however it quits: from its menu, at logout, or when the system asks it to.
+if (IS_MAS) app.on("will-quit", stopOwnBoost);
 
 // A menu-bar app keeps running with its popover closed.
 app.on("window-all-closed", () => {});

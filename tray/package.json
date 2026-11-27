@@ -17,7 +17,9 @@
     "icon": "node scripts/icon.mjs",
     "app-icon": "node scripts/app-icon.mjs",
     "pack": "node scripts/pack.mjs",
-    "dist": "node scripts/pack.mjs --dmg"
+    "dist": "node scripts/pack.mjs --dmg",
+    "mas": "node scripts/pack.mjs --mas",
+    "mas:dev": "node scripts/pack.mjs --mas-dev"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",

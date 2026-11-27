@@ -29,7 +29,14 @@ Which `luminosity-boost` it starts, first found:
 4. `.stage/boost/luminosity-boost`, which `scripts/boost.mjs` compiles from `../boost/luminosity-boost.swift`.
 
 The program keeps the name `luminosity-boost` everywhere, so the app and the shell function find and stop each
-other's. `SUNNY_STATE_FILE` points the app at another state file, for a trial run.
+other's. `SUNNY_STATE_FILE` points the app at another state file, for a trial run; the app hands its state file
+to the boost it starts (`LUMINOSITY_STATE_FILE`).
+
+The Mac App Store build is sandboxed, and differs there: it runs only the boost it carries, keeps its state
+file in its container (`~/Library/Containers/com.abernier.sunny/Data/Library/Application Support/Sunny/luminosity-percent`),
+and cannot see a boost it did not start, so it starts its own as a child process, tracks it instead of
+`pgrep`/`pkill`, and ends it when it quits (the boost also ends by itself if the app goes away,
+`LUMINOSITY_EXIT_WITH_PARENT`). The shell function and the Mac App Store app do not share a level.
 
 ## Layout
 
@@ -77,6 +84,7 @@ Apple silicon (arm64) only, macOS 13 or later.
 ```sh
 pnpm run pack     # release/mac-arm64/Sunny.app ("pnpm pack" is pnpm's own tarball command)
 pnpm dist         # also release/Sunny-arm64.dmg and release/Sunny-arm64.zip
+pnpm mas          # the Mac App Store build: release/mas-arm64/Sunny.app and Sunny-<version>-arm64.pkg
 ```
 
 Both compile `luminosity-boost` (`swiftc -O -target arm64-apple-macos13`) into the app's `Contents/Resources`, so
@@ -90,6 +98,19 @@ Sunny.app and choose Open (or System Settings > Privacy & Security > Open Anyway
 `xattr -dr com.apple.quarantine /Applications/Sunny.app`). With a Developer ID, set `CSC_NAME` (an identity in
 the keychain) or `CSC_LINK` and `CSC_KEY_PASSWORD`, and the app is signed with the hardened runtime instead;
 notarising would still have to be added.
+
+**Mac App Store.** `pnpm mas` signs a sandboxed app (`assets/entitlements.mas.plist` for the app,
+`assets/entitlements.mas.inherit.plist` for Electron's helpers and `luminosity-boost`) with the "Apple
+Distribution" identity, embeds the provisioning profile `SUNNY_MAS_PROFILE` (by default
+`../.signing/sunny-mas.provisionprofile`, not committed) and signs the installer with the "3rd Party Mac
+Developer Installer" identity, both from the keychain. Each upload needs a higher build number:
+
+```sh
+SUNNY_VERSION=0.2.0 SUNNY_BUILD=1 pnpm mas
+```
+
+A distribution-signed app does not open outside the store; `pnpm mas:dev` signs it with "Apple Development"
+instead (it needs a development profile, `SUNNY_MAS_DEV_PROFILE`, to run with its application group).
 
 **Releases.** Pushing a tag `v*` runs `../.github/workflows/release.yml`, which builds on `macos-latest` and
 attaches `Sunny-arm64.dmg` and `Sunny-arm64.zip` to the GitHub Release of that tag.

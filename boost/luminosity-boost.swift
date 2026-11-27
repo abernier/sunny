@@ -7,10 +7,13 @@
 //    on screen uses the extra brightness, not just HDR content.
 // Quitting (SIGINT/SIGTERM) restores the original ColorSync gamma.
 //
-// The level is read live from ~/.local/state/luminosity-percent (e.g. "150"),
-// so the shell function and the tray app change it without a restart.
+// The level is read live from a state file (e.g. "150"), so the shell function
+// and the tray app change it without a restart. The file is
+// $LUMINOSITY_STATE_FILE when set (the sandboxed Mac App Store build points it
+// into its container), ~/.local/state/luminosity-percent otherwise.
 //
-// Usage: luminosity-boost [factor]   (fallback when the state file is missing;
+// Usage: [LUMINOSITY_STATE_FILE=path] [LUMINOSITY_EXIT_WITH_PARENT=1] luminosity-boost [factor]
+//   (fallback when the state file is missing;
 //                                     default 2.0, clamped to available headroom)
 
 import Cocoa
@@ -20,8 +23,13 @@ let fallbackFactor = CommandLine.arguments.count > 1
   ? Float(CommandLine.arguments[1]) ?? 2.0
   : 2.0
 
-let stateFile = FileManager.default.homeDirectoryForCurrentUser
-  .appendingPathComponent(".local/state/luminosity-percent")
+let stateFile: URL = {
+  if let path = ProcessInfo.processInfo.environment["LUMINOSITY_STATE_FILE"], !path.isEmpty {
+    return URL(fileURLWithPath: path)
+  }
+  return FileManager.default.homeDirectoryForCurrentUser
+    .appendingPathComponent(".local/state/luminosity-percent")
+}()
 
 func requestedFactor() -> Float {
   guard let text = try? String(contentsOf: stateFile, encoding: .utf8),
@@ -101,7 +109,13 @@ window.orderFrontRegardless()
 // Follow the requested level (state file) and the headroom, which ramps up
 // after EDR kicks in and drops when the panel gets hot.
 var lastFactor: Float = 0
+// With LUMINOSITY_EXIT_WITH_PARENT=1 (the sandboxed Mac App Store build, which
+// cannot find a boost left behind), it stops as soon as the app that started it
+// is gone, crash included: it is then re-parented, so its parent changes.
+let parentAtStart = getppid()
+let exitWithParent = ProcessInfo.processInfo.environment["LUMINOSITY_EXIT_WITH_PARENT"] == "1"
 Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+  if exitWithParent && getppid() != parentAtStart { restoreAndExit() }
   let headroom = Float(screen.maximumExtendedDynamicRangeColorComponentValue)
   let factor = max(1, min(requestedFactor(), headroom))
   if abs(factor - lastFactor) > 0.005 {
