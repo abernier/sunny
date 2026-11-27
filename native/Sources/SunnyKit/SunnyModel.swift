@@ -4,35 +4,35 @@ import ServiceManagement
 import SunnyCore
 
 @MainActor
-final class SunnyModel: ObservableObject {
+public final class SunnyModel: ObservableObject {
   private static let lastBoostKey = "lastBoost"
 
   private let engine = BoostEngine()
   private let defaults = UserDefaults.standard
 
   /// The requested level, 100...300.
-  @Published private(set) var level = Level.min
+  @Published public private(set) var level = Level.min
   /// Whether the boost runs.
-  @Published private(set) var running = false
+  @Published public private(set) var running = false
   /// Whether the app opens at login; nil where that is not offered (not run from an app bundle).
-  @Published private(set) var openAtLogin: Bool?
+  @Published public private(set) var openAtLogin: Bool?
 
   /// The level the switch turns back on to, kept across launches.
-  private(set) var lastBoost: Int
+  public private(set) var lastBoost: Int
 
-  init() {
+  public init() {
     let saved = defaults.integer(forKey: Self.lastBoostKey)
     lastBoost = Level.isBoost(saved) ? Level.clamp(Double(saved)) : Level.defaultBoost
     openAtLogin = Self.readOpenAtLogin()
   }
 
   /// Whether the boost is on, as the switch shows it.
-  var isOn: Bool { running && Level.isBoost(level) }
+  public var isOn: Bool { running && Level.isBoost(level) }
   /// The level shown: the requested one while boosted, 100 otherwise.
-  var shownLevel: Int { isOn ? level : Level.min }
+  public var shownLevel: Int { isOn ? level : Level.min }
 
   /// Sets the level (clamped to 100...300); 100 stops the boost, more starts it if it is not running.
-  func set(_ value: Int) {
+  public func set(_ value: Int) {
     let next = Level.clamp(Double(value))
     level = next
     engine.level = next
@@ -49,16 +49,16 @@ final class SunnyModel: ObservableObject {
   }
 
   /// Moves the level by x1.1 steps: 1 is "+", -1 is "-". From off, it counts from 100.
-  func step(_ steps: Int) {
+  public func step(_ steps: Int) {
     set(Level.step(shownLevel, by: steps))
   }
 
   /// Turns the boost on (back to the last boosted level) or off.
-  func toggle(_ on: Bool) {
+  public func toggle(_ on: Bool) {
     set(on ? lastBoost : Level.min)
   }
 
-  func setOpenAtLogin(_ on: Bool) {
+  public func setOpenAtLogin(_ on: Bool) {
     do {
       if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
     } catch {
@@ -68,12 +68,12 @@ final class SunnyModel: ObservableObject {
   }
 
   /// Back to normal brightness, before the app ends however it ends.
-  func restore() {
+  public func restore() {
     if engine.isRunning { engine.stop() }
     running = false
   }
 
-  func quit() {
+  public func quit() {
     restore()
     NSApp.terminate(nil)
   }

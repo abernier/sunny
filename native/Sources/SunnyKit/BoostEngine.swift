@@ -12,7 +12,7 @@ import MetalKit
 import SunnyCore
 
 @MainActor
-final class BoostEngine {
+public final class BoostEngine {
   private static let tableSize: UInt32 = 256
 
   private let display = CGMainDisplayID()
@@ -24,15 +24,17 @@ final class BoostEngine {
   private var observers: [NSObjectProtocol] = []
 
   /// The requested level. The applied factor follows it, capped by the headroom of the moment.
-  var level = Level.min {
+  public var level = Level.min {
     didSet { update() }
   }
 
-  var isRunning: Bool { window != nil }
+  public var isRunning: Bool { window != nil }
+
+  public init() {}
 
   /// Starts the boost. False when there is no Metal device or no screen to show EDR content on.
   @discardableResult
-  func start() -> Bool {
+  public func start() -> Bool {
     if isRunning { return true }
     guard let screen = mainScreen(), let device = MTLCreateSystemDefaultDevice(), let renderer = EDRRenderer(device: device) else {
       log("no screen or Metal device: cannot boost")
@@ -88,7 +90,7 @@ final class BoostEngine {
   }
 
   /// Stops the boost and restores the normal gamma. Safe to call when it is not running.
-  func stop() {
+  public func stop() {
     timer?.invalidate()
     timer = nil
     for observer in observers {

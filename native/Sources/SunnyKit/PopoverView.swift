@@ -3,12 +3,14 @@ import AppKit
 import SunnyCore
 import SwiftUI
 
-struct PopoverView: View {
+public struct PopoverView: View {
   @ObservedObject var model: SunnyModel
+
+  public init(model: SunnyModel) { self.model = model }
   /// While the thumb is dragged the slider keeps its own position, not the one rounded to a whole level.
   @State private var dragged: Double?
 
-  var body: some View {
+  public var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack {
         Text("Sunny").font(.system(size: 13, weight: .semibold))
@@ -16,6 +18,7 @@ struct PopoverView: View {
         Toggle("Boost", isOn: Binding(get: { model.isOn }, set: { model.toggle($0) }))
           .toggleStyle(.switch)
           .controlSize(.small)
+          .tint(.orange)
           .foregroundStyle(.secondary)
       }
 
@@ -89,10 +92,12 @@ private struct RoundButtonStyle: ButtonStyle {
 }
 
 /// The menu bar icon, with the level beside it while boosted.
-struct MenuBarLabel: View {
+public struct MenuBarLabel: View {
   @ObservedObject var model: SunnyModel
 
-  var body: some View {
+  public init(model: SunnyModel) { self.model = model }
+
+  public var body: some View {
     HStack(spacing: 4) {
       Image(nsImage: Self.icon)
       if model.isOn {

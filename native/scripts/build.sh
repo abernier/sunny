@@ -7,7 +7,7 @@
 # Environment:
 #   SUNNY_VERSION       CFBundleShortVersionString (default 0.3.0)
 #   SUNNY_BUILD         CFBundleVersion, which has to grow with each upload (default 1)
-#   SUNNY_MAS_PROFILE   the provisioning profile to embed (default ../.signing/sunny-mas.provisionprofile)
+#   SUNNY_MAS_PROFILE   the provisioning profile to embed (default .signing/sunny-mas.provisionprofile of the main checkout)
 #   SUNNY_MAS_IDENTITY  the app's signing identity (default: the "Apple Distribution" one in the keychain)
 #   SUNNY_PKG_IDENTITY  the installer's (default: the "3rd Party Mac Developer Installer" one)
 #   DEVELOPER_DIR       the Xcode to build with (default /Applications/Xcode.app: the store refuses beta SDKs)
@@ -20,7 +20,8 @@ case "$mode" in
 esac
 
 here=$(cd "$(dirname "$0")/.." && pwd)
-repo=$(cd "$here/.." && pwd)
+# The main checkout, also from a git worktree: .signing/ (not committed) lives there.
+repo=$(cd "$(git -C "$here" rev-parse --path-format=absolute --git-common-dir)/.." && pwd)
 version=${SUNNY_VERSION:-0.3.0}
 build=${SUNNY_BUILD:-1}
 out="$here/build/$mode"
@@ -39,12 +40,6 @@ fi
 swift build --package-path "$here" "$@"
 bin=$(swift build --package-path "$here" "$@" --show-bin-path)
 
-rm -rf "$out"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-cp "$bin/Sunny" "$app/Contents/MacOS/Sunny"
-cp "$here/Resources/AppIcon.icns" "$here/Resources/MenuBarIconTemplate.png" "$here/Resources/MenuBarIconTemplate@2x.png" "$app/Contents/Resources/"
-printf 'APPL????' > "$app/Contents/PkgInfo"
-
 # What Xcode would record of the toolchain: App Store Connect reads these to check the SDK.
 xcode_version=$(defaults read "$DEVELOPER_DIR/../version.plist" CFBundleShortVersionString)
 xcode_build=$(defaults read "$DEVELOPER_DIR/../version.plist" ProductBuildVersion)
@@ -52,6 +47,14 @@ dt_xcode=$(echo "$xcode_version" | awk -F. '{ printf "%d%d%d0", $1 / 10, $1 % 10
 sdk_version=$(xcrun --sdk macosx --show-sdk-version)
 sdk_build=$(xcrun --sdk macosx --show-sdk-build-version)
 os_build=$(sw_vers -buildVersion)
+
+rm -rf "$out"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+# SwiftPM links with the deployment target as the SDK version (13.0); the store checks that version, so the
+# executable gets the SDK it was really built with.
+xcrun vtool -set-build-version macos 13.0 "$sdk_version" -replace -output "$app/Contents/MacOS/Sunny" "$bin/Sunny" 2>/dev/null
+cp "$here/Resources/AppIcon.icns" "$here/Resources/MenuBarIconTemplate.png" "$here/Resources/MenuBarIconTemplate@2x.png" "$app/Contents/Resources/"
+printf 'APPL????' > "$app/Contents/PkgInfo"
 
 cat > "$app/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -128,7 +131,10 @@ fi
 
 profile=${SUNNY_MAS_PROFILE:-$repo/.signing/sunny-mas.provisionprofile}
 [ -f "$profile" ] || { echo "no provisioning profile at $profile (set SUNNY_MAS_PROFILE)" >&2; exit 1; }
-cp "$profile" "$app/Contents/embedded.provisionprofile"
+cp -X "$profile" "$app/Contents/embedded.provisionprofile"
+# As few extended attributes as possible: the installer carries them as AppleDouble ._ files. Only
+# com.apple.provenance, which the system sets again, stays (the Electron build's installer had it too).
+xattr -cr "$app"
 codesign --force --sign "${SUNNY_MAS_IDENTITY:-Apple Distribution}" --entitlements "$here/entitlements/mas.plist" "$app"
 codesign --verify --strict "$app"
 

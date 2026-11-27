@@ -75,7 +75,8 @@ multiplicative because perceived brightness is not linear.
 ```
 boost/    luminosity-boost, the Swift program
 shell/    luminosity, the bash function
-tray/     the menu bar app (Electron, React): see tray/README.md
+native/   the menu bar app, native (SwiftUI, boost in-process): see native/README.md
+tray/     the menu bar app, Electron (React), being replaced by native/: see tray/README.md
 site/     the landing page
 tap_migrations.json  sends the old abernier/sunny tap to abernier/tap
 install.sh

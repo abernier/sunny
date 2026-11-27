@@ -2,6 +2,7 @@
 import AppKit
 import Combine
 import SunnyCore
+import SunnyKit
 import SwiftUI
 
 @main
