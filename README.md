@@ -19,9 +19,10 @@ the app and stops the boost.
 Or download `Sunny-arm64.dmg` from the [latest release](https://github.com/abernier/sunny/releases/latest),
 open it and drag Sunny to Applications.
 
-A sun appears in the menu bar. Click it for the popover: an on/off switch, the level, "-" and "+" (each
+A sun appears in the menu bar. Click it for the popover: a Boost switch, the level, "-" and "+" (each
 divides or multiplies by 1.1), a 100-300% slider, "Open at login" and Quit. Right-click it for Quit. While
-boosted, the level shows beside the icon.
+boosted, the level shows beside the icon. The app is native (SwiftUI) and does the boost in its own process:
+see [native/README.md](native/README.md).
 
 The app is signed ad hoc and not notarised (there is no Apple Developer ID behind it), so when installed from
 the DMG the first opening is refused by Gatekeeper. Either right-click Sunny.app in Applications and choose Open, then Open again, or
@@ -43,11 +44,12 @@ luminosity +10 | -10  # add or remove percent points
 luminosity off        # back to normal
 ```
 
-The command and the app share their state: a change made in one shows up in the other.
+The command and the app are independent: the app boosts in its own process and keeps no state file. Use one
+at a time; both set the display's gamma table.
 
 ## How it works
 
-`boost/luminosity-boost.swift` is a small program that, while it runs:
+`boost/luminosity-boost.swift` is a small program (the app does the same in-process, `native/Sources/SunnyKit/BoostEngine.swift`) that, while it runs:
 
 1. shows a tiny window of EDR (HDR) content, which makes macOS raise the panel's backlight and expose headroom
    (values above 1.0);
@@ -67,21 +69,24 @@ multiplicative because perceived brightness is not linear.
 - The boost works through the gamma table: another app that sets gamma (a color calibrator, a night-shift tool)
   can fight with it.
 - Screenshots and screen recordings do not show the boost.
-- Quitting Sunny leaves the boost as it is, like the shell command does; turn it off first if you want normal
-  brightness back.
+- Quitting Sunny (or logging out) turns the boost off; the system drops the boost if the app crashes. The shell
+  command's boost runs until `luminosity off`.
 
 ## Repository
 
 ```
 boost/    luminosity-boost, the Swift program
 shell/    luminosity, the bash function
-tray/     the menu bar app (Electron, React): see tray/README.md
+native/   the menu bar app (SwiftUI, boost in-process): see native/README.md
 site/     the landing page
+reel/     the product film, composited from captures of the real UI: see reel/README.md
+appstore/ the Mac App Store screenshots and app preview
 tap_migrations.json  sends the old abernier/sunny tap to abernier/tap
 install.sh
 ```
 
-Releases are built by `.github/workflows/release.yml` when a `v*` tag is pushed; it also bumps the cask in
+Releases are built by `.github/workflows/release.yml` when a `v*` tag is pushed (`native/scripts/build.sh dist`:
+Sunny-arm64.dmg and Sunny-arm64.zip); it also bumps the cask in
 [abernier/homebrew-tap](https://github.com/abernier/homebrew-tap) through a write deploy key of that repository
 (secret `HOMEBREW_TAP_DEPLOY_KEY`). Never rebuild a published release in place: the cask pins its sha256.
 

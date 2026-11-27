@@ -19,7 +19,7 @@ const arg = (name) => { const i = process.argv.indexOf(`--${name}`); return i > 
 const flag = (name) => process.argv.includes(`--${name}`);
 const FPS = Number(arg("fps") ?? 60);
 const captures = path.join(dir, "captures");
-for (const f of ["dmg-window.png", "dmg-background@2x.png", "chrome-toolbar.png", "page.png", "popover.json", "icon.png", "trayTemplate@2x.png"]) {
+for (const f of ["dmg-window.png", "dmg-background@2x.png", "chrome-toolbar.png", "page.png", "popover.json", "AppIcon.png", "MenuBarIconTemplate@2x.png"]) {
 	if (!fs.existsSync(path.join(captures, f))) throw new Error(`reel/captures/${f} is missing: see reel/README.md`);
 }
 
@@ -30,7 +30,7 @@ const { page } = browser;
 page.on("pageerror", (e) => { console.error("page error:", e.message); process.exitCode = 1; });
 await page.goto(`file://${path.join(dir, "reel.html")}`);
 // The real plate of the app icon (a superellipse), in place of the circle-ish stand-in the page starts with.
-const plate = fs.readFileSync(path.join(captures, "icon.svg"), "utf8").match(/<path id="plate" d="([^"]+)"/)[1];
+const plate = fs.readFileSync(path.join(captures, "AppIcon.svg"), "utf8").match(/<path id="plate" d="([^"]+)"/)[1];
 const pop = JSON.parse(fs.readFileSync(path.join(captures, "popover.json"), "utf8"));
 await page.evaluate(async ([plate, pop]) => {
 	document.getElementById("plate").setAttribute("d", plate);

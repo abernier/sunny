@@ -1,26 +1,27 @@
 // The Mac App Store screenshots: 2880 x 1800 PNGs (16:10, no alpha), into appstore/screenshots/.
 //
-//   node appstore/screenshots.mjs
+//   node appstore/screenshots.mjs            -> appstore/screenshots/
+//   node appstore/screenshots.mjs --out DIR  -> DIR, to compare with the committed ones first
 //
-// What they show of the app is captured, not mocked: the popover is the real renderer (tray/src, React),
-// served by Vite in memory, driven through the same bridge the Electron preload gives it, and captured in
-// headless Chrome for Testing at three pixels per point (as reel/capture.mjs does). The menu-bar glyph is
-// tray/assets/trayTemplate@2x.png. Drawn here: the wallpaper (the site's sky, sun and sea, src/palette.ts),
-// a plain menu bar, the popover's vibrancy, the cursor and the headlines (the site's Bricolage Grotesque).
+// What they show of the app is captured, not mocked: the popover is the app's SwiftUI view
+// (native/Sources/SunnyKit/PopoverView.swift), drawn offscreen at three pixels per point by
+// `swift run boost-check popover` (as reel/capture.mjs does), from a preview model that never touches the
+// display. The menu-bar glyph is native/Resources/MenuBarIconTemplate@2x.png. Drawn here: the wallpaper (the
+// site's sky, sun and sea, src/palette.ts), a plain menu bar, the popover's vibrancy, the cursor and the
+// headlines (the site's Bricolage Grotesque).
 //
-// Needs Node 24, ffmpeg, and node_modules in reel/ (playwright-core), tray/ and site/.
-// Nothing is written into tray/: Vite runs without its config file and keeps its cache in a temp folder.
+// Needs Node 24, ffmpeg, Swift (Xcode command line tools), and node_modules in reel/ (playwright-core) and site/.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { launch } from "../reel/browser.mjs";
 
 const dir = import.meta.dirname;
 const root = path.join(dir, "..");
-const tray = path.join(root, "tray");
-const out = path.join(dir, "screenshots");
+const native = path.join(root, "native");
+const outArg = process.argv.indexOf("--out");
+const out = outArg > 0 ? path.resolve(process.argv[outArg + 1]) : path.join(dir, "screenshots");
 
 /** The shots, in store order. `level` is the popover's level; `cursor` points at a part of it. */
 const SHOTS = [
@@ -58,7 +59,7 @@ const dataUri = (file, type) => `data:${type};base64,${fs.readFileSync(file).toS
 
 const captures = fs.mkdtempSync(path.join(os.tmpdir(), "sunny-appstore-"));
 try {
-	const parts = await capturePopover();
+	const parts = capturePopover();
 	fs.mkdirSync(out, { recursive: true });
 	await compose(parts);
 } finally {
@@ -66,98 +67,43 @@ try {
 }
 
 /** The popover at each shot's level, dark as the menu bar over these skies, with the parts a cursor points at. */
-async function capturePopover() {
-	const fromTray = (p) => import(pathToFileURL(path.join(tray, "node_modules", p)).href);
-	const { createServer } = await fromTray("vite/dist/node/index.js");
-	const { default: react } = await fromTray("@vitejs/plugin-react/dist/index.js");
-	const { default: tailwindcss } = await fromTray("@tailwindcss/vite/dist/index.mjs");
-	const server = await createServer({
-		root: tray,
-		configFile: false,
-		cacheDir: path.join(captures, "vite"),
-		plugins: [react(), tailwindcss()],
-		server: { port: 5298, strictPort: true },
-		logLevel: "warn",
-	});
-	await server.listen();
-	const browser = await launch({ viewport: { width: 300, height: 200 }, deviceScaleFactor: 3, colorScheme: "dark" });
-	try {
-		const { page } = browser;
-		// The preload's bridge (see reel/capture.mjs), with a handle to set the level from here.
-		await page.addInitScript(() => {
-			let state = { level: 100, running: false };
-			const listeners = new Set();
-			const set = async (level) => {
-				const next = Math.min(300, Math.max(100, Math.round(level)));
-				state = { level: next, running: next > 100 };
-				for (const fn of listeners) fn(state);
-			};
-			window.__setLevel = set;
-			window.sunny = {
-				state: async () => state,
-				set,
-				step: (steps) => set((state.running ? state.level : 100) * 1.1 ** steps),
-				toggle: (on) => set(on ? 150 : 100),
-				quit: async () => {},
-				openAtLogin: async () => false,
-				setOpenAtLogin: async (on) => on,
-				onState: (fn) => (listeners.add(fn), () => listeners.delete(fn)),
-			};
-		});
-		await page.goto("http://localhost:5298/");
-		await page.getByTestId("level").waitFor();
-		await page.evaluate(() => document.fonts.ready);
-
-		const parts = {};
-		for (const shot of SHOTS) {
-			await page.mouse.move(299, 199);
-			await page.evaluate((level) => window.__setLevel(level), shot.level);
-			await page.waitForTimeout(400);
-			const thumb = await page.getByRole("slider").boundingBox();
-			const sw = await page.getByRole("switch").first().boundingBox();
-			const at = { thumb: { x: thumb.x + thumb.width / 2, y: thumb.y + thumb.height / 2 }, switch: { x: sw.x + sw.width / 2, y: sw.y + sw.height / 2 } };
-			// A hovered part looks hovered, as it would under the pointer.
-			if (shot.cursor) {
-				await page.mouse.move(at[shot.cursor].x, at[shot.cursor].y);
-				await page.waitForTimeout(300);
-			}
-			const file = path.join(captures, `popover-${shot.level}.png`);
-			await page.screenshot({ path: file, omitBackground: true });
-			const text = await page.getByTestId("level").innerText();
-			if (Number.parseInt(text, 10) !== shot.level) throw new Error(`popover shows ${text}, expected ${shot.level}%`);
-			parts[shot.file] = { file, at };
-		}
-		return parts;
-	} finally {
-		await browser.close();
-		await server.close();
+function capturePopover() {
+	const levels = SHOTS.map((shot) => shot.level).join(",");
+	execFileSync("swift", ["run", "--package-path", native, "boost-check", "popover", captures, "--levels", levels], { stdio: "inherit" });
+	const manifest = JSON.parse(fs.readFileSync(path.join(captures, "popover.json"), "utf8"));
+	const parts = {};
+	for (const shot of SHOTS) {
+		const frame = manifest.frames.find((f) => f.file === `popover/level-${shot.level}.png`);
+		if (frame?.level !== shot.level) throw new Error(`popover shows ${frame?.level}%, expected ${shot.level}%`);
+		parts[shot.file] = { file: path.join(captures, frame.file), at: { thumb: frame.knob, switch: manifest.switch }, size: manifest.size };
 	}
+	return parts;
 }
 
 /** Each shot, drawn at 1440 x 900 points and two pixels per point, then flattened to RGB. */
 async function compose(parts) {
 	const font = path.join(root, "site", "node_modules", "@fontsource-variable", "bricolage-grotesque", "files", "bricolage-grotesque-latin-standard-normal.woff2");
-	const glyph = dataUri(path.join(tray, "assets", "trayTemplate@2x.png"), "image/png");
+	const glyph = dataUri(path.join(native, "Resources", "MenuBarIconTemplate@2x.png"), "image/png");
 	const browser = await launch({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: "dark" });
 	try {
 		const { page } = browser;
 		for (const shot of SHOTS) {
 			const part = parts[shot.file];
-			await page.setContent(html({ shot, popover: dataUri(part.file, "image/png"), at: part.at, glyph, font: dataUri(font, "font/woff2") }));
+			await page.setContent(html({ shot, popover: dataUri(part.file, "image/png"), at: part.at, size: part.size, glyph, font: dataUri(font, "font/woff2") }));
 			await page.evaluate(() => document.fonts.ready);
 			await page.waitForTimeout(200);
 			const raw = path.join(captures, shot.file);
 			await page.screenshot({ path: raw });
 			const target = path.join(out, shot.file);
 			execFileSync("ffmpeg", ["-v", "error", "-y", "-i", raw, "-pix_fmt", "rgb24", target]);
-			console.log(`${path.relative(root, target)}: ${shot.level}%`);
+			console.log(`${target}: ${shot.level}%`);
 		}
 	} finally {
 		await browser.close();
 	}
 }
 
-function html({ shot, popover, at, glyph, font }) {
+function html({ shot, popover, at, size: [popW, popH], glyph, font }) {
 	const position = levelToPosition(shot.level);
 	const sky = paletteAt(position);
 	const dusk = position < DUSK_UNTIL;
@@ -166,8 +112,8 @@ function html({ shot, popover, at, glyph, font }) {
 	const text = dusk ? cream : ink;
 	// The menu bar and popover are shown at 1.5x, so that the popover's 3x capture lands on device pixels 1:1.
 	const Z = 1.5;
-	const POP = { x: 1440 / Z - 300 - 96, y: 24 + 5 };
-	const trayX = POP.x + 150;
+	const POP = { x: 1440 / Z - popW - 96, y: 24 + 5 };
+	const trayX = POP.x + popW / 2;
 	const cursorAt = shot.cursor ? at[shot.cursor] : null;
 	// The sun rises with the level, from the horizon to high in the sky, on the left under the headline.
 	const horizon = 900 * 0.7;
@@ -192,10 +138,10 @@ html, body { width: 1440px; height: 900px; overflow: hidden; background: ${sky.s
 .item { height: 22px; display: flex; align-items: center; padding: 0 7px; border-radius: 5px; font-variant-numeric: tabular-nums; white-space: pre; }
 .item.on { background: rgba(255, 255, 255, 0.22); }
 .item img { width: 18px; height: 18px; filter: invert(1); display: block; }
-#pop { position: absolute; left: ${POP.x}px; top: ${POP.y}px; width: 300px; height: 200px; }
+#pop { position: absolute; left: ${POP.x}px; top: ${POP.y}px; width: ${popW}px; height: ${popH}px; }
 #pop .material { position: absolute; inset: 0; border-radius: 10px; background: rgba(38, 36, 44, 0.74); backdrop-filter: blur(28px) saturate(1.8);
 	box-shadow: 0 18px 50px rgba(20, 6, 30, 0.45), inset 0 0 0 0.5px rgba(255, 255, 255, 0.16), 0 0 0 0.5px rgba(0, 0, 0, 0.6); }
-#pop img { position: absolute; inset: 0; width: 300px; height: 200px; }
+#pop img { position: absolute; inset: 0; width: ${popW}px; height: ${popH}px; }
 #cursor { position: absolute; width: 26px; height: 34px; }
 </style></head><body>
 <div id="sky"><div id="sun"></div></div>

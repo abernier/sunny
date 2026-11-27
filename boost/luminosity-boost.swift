@@ -8,9 +8,9 @@
 // Quitting (SIGINT/SIGTERM) restores the original ColorSync gamma.
 //
 // The level is read live from a state file (e.g. "150"), so the shell function
-// and the tray app change it without a restart. The file is
-// $LUMINOSITY_STATE_FILE when set (the sandboxed Mac App Store build points it
-// into its container), ~/.local/state/luminosity-percent otherwise.
+// changes it without a restart. The file is $LUMINOSITY_STATE_FILE when set,
+// ~/.local/state/luminosity-percent otherwise. (The menu bar app, native/, does
+// the same in its own process and does not use this program.)
 //
 // Usage: [LUMINOSITY_STATE_FILE=path] [LUMINOSITY_EXIT_WITH_PARENT=1] luminosity-boost [factor]
 //   (fallback when the state file is missing;
@@ -109,9 +109,9 @@ window.orderFrontRegardless()
 // Follow the requested level (state file) and the headroom, which ramps up
 // after EDR kicks in and drops when the panel gets hot.
 var lastFactor: Float = 0
-// With LUMINOSITY_EXIT_WITH_PARENT=1 (the sandboxed Mac App Store build, which
-// cannot find a boost left behind), it stops as soon as the app that started it
-// is gone, crash included: it is then re-parented, so its parent changes.
+// With LUMINOSITY_EXIT_WITH_PARENT=1 (for a program that runs it as a child and
+// could not find a boost left behind), it stops as soon as the process that
+// started it is gone, crash included: it is then re-parented, so its parent changes.
 let parentAtStart = getppid()
 let exitWithParent = ProcessInfo.processInfo.environment["LUMINOSITY_EXIT_WITH_PARENT"] == "1"
 Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
